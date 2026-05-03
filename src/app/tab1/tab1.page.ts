@@ -449,6 +449,10 @@ export class Tab1Page implements OnInit, OnDestroy, AfterViewInit {
     }
   }
 
+  goToProfile() {
+    this.router.navigate(['/tabs/tab3']);
+  }
+
   locationChanged(ev: any) {
     this.selectedLocation = ev.detail.value;
     this.selectedTab = 'all';

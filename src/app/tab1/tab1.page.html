@@ -16,8 +16,8 @@
           class="flex-1 bg-transparent border-none outline-none text-base text-gray-700 placeholder-gray-400 font-medium transition-colors"
           [ngClass]="{'text-blue-700 placeholder-blue-300': isSearching}">
 
-        <div class="flex items-center border-l pl-3 ml-2 transition-colors duration-300"
-          [ngClass]="isSearching ? 'border-blue-200' : 'border-gray-200'">
+        <div class="flex items-center border-l pl-3 ml-2 transition-colors duration-300 cursor-pointer"
+          [ngClass]="isSearching ? 'border-blue-200' : 'border-gray-200'" (click)="goToProfile()">
           <div
             class="w-8 h-8 rounded-full overflow-hidden border border-gray-200 bg-gray-100 flex items-center justify-center">
             
