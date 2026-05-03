@@ -1,6 +1,6 @@
 # FastPass - Parking & Visitor Management System
 
-ระบบจัดการผู้มาติดต่อและที่จอดรถ (Visitor & Parking Management)
+ระบบจัดการผู้มาติดต่อและที่จอดรถ (Visitor & Parking Management) CPE402
 
 ## 💻 Tech Stack
 - **Frontend:** Angular, Ionic Framework, Tailwind CSS
