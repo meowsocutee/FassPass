@@ -21,6 +21,7 @@ import { SupabaseService } from '../services/supabase.service';
 import { ParkingDetailComponent } from '../modal/parking-detail/parking-detail.component';
 import { BookingTypeSelectorComponent } from '../modal/booking-type-selector/booking-type-selector.component';
 import { RegisterCodeModalComponent } from '../modal/register-code/register-code-modal.component';
+import { Parking3DModalComponent } from '../modal/parking-3d-modal/parking-3d-modal.component';
 
 import * as ngeohash from 'ngeohash';
 import { ParkingLot, ScheduleItem, UserProfile } from '../data/models';
@@ -447,6 +448,14 @@ export class Tab1Page implements OnInit, OnDestroy, AfterViewInit {
         );
       }, 400);
     }
+
+  }
+  async openParking3DModal() {
+    const modal = await this.modalCtrl.create({
+      component: Parking3DModalComponent,
+      cssClass: 'parking-3d-modal'
+    });
+    await modal.present();
   }
 
   goToProfile() {

@@ -1,0 +1,199 @@
+:host {
+  display: block;
+  width: 100%;
+  height: 100%;
+  position: relative;
+}
+
+.map-container {
+  position: relative;
+  width: 100%;
+  height: 100%;
+  overflow: hidden;
+  background: #f4f6fb;
+}
+
+#map,
+:host ::ng-deep .leaflet-container {
+  width: 100%;
+  height: 100%;
+  background: #f4f6fb;
+}
+
+.top-overlay {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  padding-top: calc(16px + env(safe-area-inset-top));
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 14px;
+  pointer-events: none;
+  z-index: 1100;
+}
+
+.search-wrapper {
+  width: min(440px, 92%);
+  pointer-events: auto;
+  position: relative;
+}
+
+.search-wrapper ion-searchbar {
+  --background: transparent;
+  --color: #0f172a;
+  --placeholder-color: #94a3b8;
+  --icon-color: #64748b;
+  padding: 0;
+}
+
+.search-wrapper ion-searchbar::part(container) {
+  background: rgba(255, 255, 255, 0.98);
+  border-radius: 16px;
+  box-shadow: 0 6px 22px rgba(18, 38, 77, 0.12);
+  border: 1px solid rgba(229, 231, 235, 0.7);
+}
+
+.search-wrapper ion-searchbar::part(input) {
+  font-size: 1rem;
+  font-family: 'Sarabun', 'Roboto', sans-serif;
+}
+
+.search-suggestions {
+  position: absolute;
+  top: calc(100% + 8px);
+  left: 0;
+  width: 100%;
+  pointer-events: auto;
+  z-index: 1110;
+}
+
+.search-suggestions ion-list {
+  background: white;
+  border-radius: 16px;
+  box-shadow: 0 12px 28px rgba(18, 38, 77, 0.18);
+  border: 1px solid rgba(229, 231, 235, 0.7);
+  max-height: 60vh;
+  overflow-y: auto;
+}
+
+.search-suggestions ion-item {
+  --inner-padding-end: 0.75rem;
+  --inner-padding-start: 0.75rem;
+  --min-height: 56px;
+}
+
+.search-suggestions ion-item ion-label h4 {
+  margin: 0;
+  font-size: 0.95rem;
+  color: #202124;
+  font-weight: 600;
+}
+
+.search-suggestions ion-item ion-label p {
+  margin: 2px 0 0;
+  font-size: 0.82rem;
+  color: #70757a;
+}
+
+.search-feedback {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  margin-top: 8px;
+  padding: 6px 14px;
+  border-radius: 14px;
+  background: rgba(255, 255, 255, 0.92);
+  box-shadow: 0 2px 6px rgba(15, 23, 42, 0.12);
+  font-size: 0.85rem;
+  pointer-events: auto;
+}
+
+ion-note[color="danger"].search-feedback {
+  background: #fdecea;
+  color: #b3261e;
+  box-shadow: none;
+}
+
+.zone-selector-wrapper {
+  width: min(440px, 92%);
+  padding: 12px 16px;
+  border-radius: 16px;
+  background: rgba(255, 255, 255, 0.95);
+  box-shadow: 0 6px 18px rgba(18, 38, 77, 0.12);
+  pointer-events: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.zone-label {
+  font-weight: 600;
+  color: #1f2933;
+  font-size: 0.95rem;
+}
+
+.zone-selector-wrapper ion-select {
+  width: 100%;
+}
+
+.zone-selector-wrapper ion-select::part(container) {
+  border-radius: 12px;
+  border: 1px solid rgba(209, 213, 219, 0.95);
+  background: white;
+  min-height: 44px;
+  padding-inline: 12px;
+  box-shadow: none;
+}
+
+.zone-selector-wrapper ion-select::part(text) {
+  font-size: 0.92rem;
+  color: #374151;
+}
+
+ion-chip.user-status {
+  pointer-events: auto;
+  --background: rgba(15, 23, 42, 0.85);
+  --color: #f8fafc;
+  box-shadow: 0 6px 18px rgba(15, 23, 42, 0.18);
+  font-size: 0.85rem;
+}
+
+ion-chip.user-status ion-icon {
+  color: inherit;
+}
+
+ion-fab.fab-container {
+  z-index: 1200;
+  --offset-bottom: calc(120px + env(safe-area-inset-bottom));
+  --offset-end: 18px;
+}
+
+ion-fab.fab-container ion-fab-button {
+  --background: #ffffff;
+  --color: #1a73e8;
+  --box-shadow: 0 10px 24px rgba(15, 23, 42, 0.18);
+}
+
+ion-fab.fab-container ion-fab-button::part(native) {
+  border-radius: 50%;
+}
+
+ion-fab.fab-container ion-fab-button::part(native):active {
+  transform: scale(0.94);
+}
+
+.error-toast {
+  position: absolute;
+  bottom: calc(16px + env(safe-area-inset-bottom));
+  left: 50%;
+  transform: translateX(-50%);
+  background: #fdecea;
+  color: #b3261e;
+  padding: 10px 18px;
+  border-radius: 16px;
+  box-shadow: 0 4px 12px rgba(229, 115, 115, 0.25);
+  font-size: 0.9rem;
+  z-index: 1300;
+}

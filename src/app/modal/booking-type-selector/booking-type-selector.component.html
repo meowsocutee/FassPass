@@ -11,6 +11,15 @@
 </ion-header>
 
 <ion-content class="ion-padding" style="--background: white;">
+    <div class="mb-4">
+        <ion-button expand="block" (click)="open3DMap()" 
+            class="h-12 shadow-md rounded-xl overflow-hidden font-[Inter] font-bold tracking-wide"
+            style="--background: #111827; --background-hover: #374151; --border-radius: 12px; --box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);">
+            <ion-icon name="cube-outline" slot="start" class="text-xl"></ion-icon>
+            ดูแผนผังลานจอดรถ 3D
+        </ion-button>
+    </div>
+
     <div class="flex flex-col gap-3 mt-1">
         <div *ngFor="let type of bookingTypes" (click)="selectType(type.id)"
             class="group relative p-4 rounded-xl bg-white border border-gray-100 shadow-[0_2px_8px_rgba(0,0,0,0.08)] hover:shadow-[0_4px_12px_rgba(0,0,0,0.12)] active:scale-95 transition-all duration-300 flex items-center gap-4 overflow-hidden cursor-pointer"

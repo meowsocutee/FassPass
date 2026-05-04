@@ -1,5 +1,6 @@
 import { Component, OnInit } from '@angular/core';
 import { ModalController } from '@ionic/angular';
+import { Parking3DModalComponent } from '../parking-3d-modal/parking-3d-modal.component';
 
 @Component({
     selector: 'app-booking-type-selector',
@@ -50,6 +51,14 @@ export class BookingTypeSelectorComponent implements OnInit {
 
     close() {
         this.modalCtrl.dismiss(null, 'cancel');
+    }
+
+    async open3DMap() {
+        const modal = await this.modalCtrl.create({
+            component: Parking3DModalComponent,
+            cssClass: 'parking-3d-modal'
+        });
+        await modal.present();
     }
 
 }
