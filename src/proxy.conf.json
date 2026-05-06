@@ -1,0 +1,11 @@
+{
+  "/api/aiforthai": {
+    "target": "https://api.aiforthai.in.th",
+    "secure": true,
+    "changeOrigin": true,
+    "pathRewrite": {
+      "^/api/aiforthai": ""
+    },
+    "logLevel": "debug"
+  }
+}

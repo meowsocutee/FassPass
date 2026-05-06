@@ -1,10 +1,11 @@
 import { Component, Input, OnInit, OnDestroy } from '@angular/core';
-import { IonicModule, ModalController, ToastController } from '@ionic/angular';
+import { IonicModule, ModalController, ToastController, LoadingController, AlertController, IonicSafeString } from '@ionic/angular';
 import { CommonModule } from '@angular/common';
 import { Booking } from '../../data/models';
 import { ReservationService } from '../../services/reservation.service';
 import { AuthService } from '../../services/auth.service';
 import { SupabaseService } from '../../services/supabase.service';
+import { LprService, LprResult } from '../../services/lpr.service';
 import { firstValueFrom } from 'rxjs';
 import { RealtimeChannel } from '@supabase/supabase-js';
 
@@ -18,6 +19,8 @@ export class ReservationDetailComponent implements OnInit, OnDestroy {
 
     internalStatus: string = '';
     statusLabel: string = '';
+    isScanning: boolean = false;
+    lastScanResult: LprResult | null = null;
 
     private realtimeChannel: RealtimeChannel | null = null;
 
@@ -26,7 +29,10 @@ export class ReservationDetailComponent implements OnInit, OnDestroy {
       private reservationService: ReservationService,
       private authService: AuthService,
       private supabaseService: SupabaseService,
-      private toastCtrl: ToastController
+      private toastCtrl: ToastController,
+      private loadingCtrl: LoadingController,
+      private alertCtrl: AlertController,
+      private lprService: LprService
     ) { }
 
     ngOnInit() {
@@ -299,5 +305,207 @@ export class ReservationDetailComponent implements OnInit, OnDestroy {
         } catch (error) {
             console.error('Error checking in (pending payment):', error);
         }
+    }
+
+    /**
+     * สแกนป้ายทะเบียนด้วย AI for Thai แล้วเช็คอิน
+     */
+    async handleLprCheckIn() {
+        this.isScanning = true;
+        const loading = await this.loadingCtrl.create({
+            message: 'กำลังเปิดกล้อง...',
+            spinner: 'crescent'
+        });
+        await loading.present();
+
+        try {
+            // 1. ถ่ายรูป
+            const imageFile = await this.lprService.captureFromCamera();
+            if (!imageFile) {
+                await loading.dismiss();
+                this.isScanning = false;
+                return;
+            }
+
+            loading.message = 'กำลังสแกนป้ายทะเบียน (AI for Thai)...';
+
+            // 2. ส่งไปยัง AI for Thai LPR API
+            const result = await this.lprService.recognizePlate(imageFile);
+            this.lastScanResult = result;
+
+            await loading.dismiss();
+
+            if (!result.success) {
+                await this.showLprAlert(
+                    'สแกนไม่สำเร็จ',
+                    result.error || 'ไม่พบป้ายทะเบียนในรูปภาพ',
+                    'danger'
+                );
+                this.isScanning = false;
+                return;
+            }
+
+            // 3. แสดงผลลัพธ์ป้ายทะเบียนและขอยืนยัน
+            const plateDisplay = result.province
+                ? `${result.licensePlate} ${result.province}`
+                : result.licensePlate;
+
+            const bookingPlate = this.booking.licensePlate.replace(/\s+/g, '');
+            const scannedPlate = result.licensePlate.replace(/\s+/g, '');
+            const isMatch = scannedPlate === bookingPlate || scannedPlate.includes(bookingPlate) || bookingPlate.includes(scannedPlate);
+
+            const matchText = isMatch 
+                ? `✅ ทะเบียนตรงกับข้อมูลการจอง`
+                : `❌ ทะเบียนไม่ตรงกับข้อมูล\nคาดหวัง: ${this.booking.licensePlate}`;
+
+            const alert = await this.alertCtrl.create({
+                header: 'สแกนสำเร็จ',
+                subHeader: 'ป้ายทะเบียนที่ตรวจพบ:',
+                message: `${plateDisplay}\n\n${matchText}\n\nยืนยันเช็คอินด้วยป้ายทะเบียนนี้?`,
+                buttons: [
+                    {
+                        text: 'ยกเลิก',
+                        role: 'cancel'
+                    },
+                    {
+                        text: 'ยืนยันเช็คอิน',
+                        handler: async () => {
+                            // 4. เปลี่ยนสถานะเป็น checked_in
+                            try {
+                                await this.reservationService.updateReservationStatusv2(this.booking.id, 'checked_in');
+                                this.internalStatus = 'checked_in';
+                                this.booking.status = 'checked_in';
+                                this.updateStaticData();
+                                this.fetchCurrentFee();
+
+                                const toast = await this.toastCtrl.create({
+                                    message: `เช็คอินสำเร็จ | ป้ายทะเบียน: ${plateDisplay}`,
+                                    duration: 3000,
+                                    color: 'success',
+                                    position: 'bottom'
+                                });
+                                await toast.present();
+                            } catch (error) {
+                                console.error('Error LPR check-in:', error);
+                                this.showToast('เกิดข้อผิดพลาดในการเช็คอิน', 'danger');
+                            }
+                        }
+                    }
+                ]
+            });
+            await alert.present();
+
+        } catch (error) {
+            await loading.dismiss();
+            console.error('Error in LPR check-in:', error);
+            this.showToast('เกิดข้อผิดพลาดในการสแกน', 'danger');
+        }
+        this.isScanning = false;
+    }
+
+    /**
+     * สแกนป้ายทะเบียนด้วย AI for Thai แล้วเช็คเอาท์
+     */
+    async handleLprCheckOut() {
+        this.isScanning = true;
+        const loading = await this.loadingCtrl.create({
+            message: 'กำลังเปิดกล้อง...',
+            spinner: 'crescent'
+        });
+        await loading.present();
+
+        try {
+            // 1. ถ่ายรูป
+            const imageFile = await this.lprService.captureFromCamera();
+            if (!imageFile) {
+                await loading.dismiss();
+                this.isScanning = false;
+                return;
+            }
+
+            loading.message = 'กำลังสแกนป้ายทะเบียน (AI for Thai)...';
+
+            // 2. ส่งไปยัง AI for Thai LPR API
+            const result = await this.lprService.recognizePlate(imageFile);
+            this.lastScanResult = result;
+
+            await loading.dismiss();
+
+            if (!result.success) {
+                await this.showLprAlert(
+                    'สแกนไม่สำเร็จ',
+                    result.error || 'ไม่พบป้ายทะเบียนในรูปภาพ',
+                    'danger'
+                );
+                this.isScanning = false;
+                return;
+            }
+
+            // 3. แสดงผลลัพธ์และขอยืนยัน
+            const plateDisplay = result.province
+                ? `${result.licensePlate} ${result.province}`
+                : result.licensePlate;
+
+            const bookingPlate = this.booking.licensePlate.replace(/\s+/g, '');
+            const scannedPlate = result.licensePlate.replace(/\s+/g, '');
+            const isMatch = scannedPlate === bookingPlate || scannedPlate.includes(bookingPlate) || bookingPlate.includes(scannedPlate);
+
+            const matchText = isMatch 
+                ? `✅ ทะเบียนตรงกับข้อมูลการจอง`
+                : `❌ ทะเบียนไม่ตรงกับข้อมูล\nคาดหวัง: ${this.booking.licensePlate}`;
+
+            const alert = await this.alertCtrl.create({
+                header: 'สแกนสำเร็จ',
+                subHeader: 'ป้ายทะเบียนที่ตรวจพบ:',
+                message: `${plateDisplay}\n\n${matchText}\n\nค่าบริการ: ฿${this.booking.price || 0}\n\nยืนยันเช็คเอาท์ด้วยป้ายทะเบียนนี้?`,
+                buttons: [
+                    {
+                        text: 'ยกเลิก',
+                        role: 'cancel'
+                    },
+                    {
+                        text: 'ยืนยันเช็คเอาท์',
+                        cssClass: 'alert-button-danger',
+                        handler: async () => {
+                            // 4. เปลี่ยนสถานะเป็น confirmed (checkout)
+                            try {
+                                await this.reservationService.updateReservationStatusv2(this.booking.id, 'confirmed');
+                                this.internalStatus = 'confirmed';
+                                this.booking.status = 'confirmed';
+                                this.updateStaticData();
+
+                                const toast = await this.toastCtrl.create({
+                                    message: `เช็คเอาท์สำเร็จ | ป้ายทะเบียน: ${plateDisplay}`,
+                                    duration: 3000,
+                                    color: 'success',
+                                    position: 'bottom'
+                                });
+                                await toast.present();
+                            } catch (error) {
+                                console.error('Error LPR check-out:', error);
+                                this.showToast('เกิดข้อผิดพลาดในการเช็คเอาท์', 'danger');
+                            }
+                        }
+                    }
+                ]
+            });
+            await alert.present();
+
+        } catch (error) {
+            await loading.dismiss();
+            console.error('Error in LPR check-out:', error);
+            this.showToast('เกิดข้อผิดพลาดในการสแกน', 'danger');
+        }
+        this.isScanning = false;
+    }
+
+    private async showLprAlert(header: string, message: string, color: string = 'danger') {
+        const alert = await this.alertCtrl.create({
+            header,
+            message,
+            buttons: ['ตกลง'],
+            cssClass: color === 'danger' ? 'error-alert' : ''
+        });
+        await alert.present();
     }
 }

@@ -78,7 +78,8 @@
           "builder": "@angular-devkit/build-angular:dev-server",
           "options": {
             "disableHostCheck": true,
-            "allowedHosts": [".ngrok-free.app", ".ngrok-free.dev"]
+            "allowedHosts": [".ngrok-free.app", ".ngrok-free.dev"],
+            "proxyConfig": "src/proxy.conf.json"
           },
           "configurations": {
             "production": {

@@ -99,10 +99,15 @@
                         ลดราคาที่จอด
                     </ion-button>
                     <ion-button expand="block" shape="round" fill="outline" color="primary"
-                        class="h-[50px] font-bold text-[15px]"
+                        class="mb-3 h-[50px] font-bold text-[15px]"
                         (click)="handleCheckout()">
                         <ion-icon slot="start" name="log-out-outline"></ion-icon>
                         เช็คเอาท์และชำระเงิน
+                    </ion-button>
+                    <ion-button expand="block" shape="round" color="warning"
+                        class="h-[50px] font-bold text-[15px]" (click)="handleLprCheckOut()" [disabled]="isScanning">
+                        <ion-icon slot="start" name="camera-outline"></ion-icon>
+                        สแกนป้ายทะเบียน เช็คเอาท์ (AI)
                     </ion-button>
                 </ng-container>
 
@@ -121,6 +126,11 @@
                         class="mb-3 h-[50px] font-bold text-[15px]" (click)="handleSimulateCheckIn()">
                         <ion-icon slot="start" name="log-in-outline"></ion-icon>
                         จำลองเช็คอิน (Check-in)
+                    </ion-button>
+                    <ion-button expand="block" shape="round" color="tertiary"
+                        class="mb-3 h-[50px] font-bold text-[15px]" (click)="handleLprCheckIn()" [disabled]="isScanning">
+                        <ion-icon slot="start" name="camera-outline"></ion-icon>
+                        สแกนป้ายทะเบียน เช็คอิน (AI)
                     </ion-button>
                     <ion-button expand="block" shape="round" fill="outline" color="danger"
                         class="h-[50px] font-bold text-[15px]"
