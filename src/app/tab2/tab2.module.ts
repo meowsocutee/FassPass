@@ -8,6 +8,7 @@ import { ExploreContainerComponentModule } from '../explore-container/explore-co
 import { Tab2PageRoutingModule } from './tab2-routing.module';
 
 import { ReservationDetailComponent } from '../modal/reservation-detail/reservation-detail.component';
+import { LprScannerComponent } from '../modal/lpr-scanner/lpr-scanner.component';
 
 @NgModule({
   imports: [
@@ -15,7 +16,8 @@ import { ReservationDetailComponent } from '../modal/reservation-detail/reservat
     CommonModule,
     FormsModule,
     ExploreContainerComponentModule,
-    Tab2PageRoutingModule
+    Tab2PageRoutingModule,
+    LprScannerComponent
   ],
   declarations: [Tab2Page, ReservationDetailComponent]
 })

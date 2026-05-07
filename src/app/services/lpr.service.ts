@@ -143,6 +143,7 @@ export class LprService {
       console.error('[LprService] API Error:', error);
 
       let errorMsg = 'เกิดข้อผิดพลาดในการเรียก API';
+
       if (error.status === 0) {
         errorMsg = 'ไม่สามารถเชื่อมต่อ API ได้ (อาจเป็นปัญหา CORS หรือเครือข่าย)';
       } else if (error.status === 401 || error.status === 403) {
@@ -150,7 +151,22 @@ export class LprService {
       } else if (error.status === 413) {
         errorMsg = 'ไฟล์รูปภาพใหญ่เกินไป กรุณาลองใหม่';
       } else if (error.status >= 500) {
-        errorMsg = 'เซิร์ฟเวอร์ AI for Thai มีปัญหาชั่วคราว กรุณาลองใหม่';
+        // API อาจ return 500 เมื่อรูปไม่ใช่ป้ายทะเบียน หรือ process ไม่ได้
+        // ตรวจสอบ response body เพื่อแยกแยะ
+        const errorBody = error.error;
+        const bodyStr = typeof errorBody === 'string' ? errorBody : JSON.stringify(errorBody || '');
+        const isNotPlate = bodyStr.includes('No license plate') ||
+                           bodyStr.includes('cannot detect') ||
+                           bodyStr.includes('no plate') ||
+                           bodyStr.includes('error') ||
+                           bodyStr.includes('index out of range') ||
+                           bodyStr.includes('Internal');
+        
+        if (isNotPlate) {
+          errorMsg = 'ไม่พบป้ายทะเบียนในรูปภาพ กรุณาถ่ายรูปป้ายทะเบียนให้ชัดเจนและลองใหม่';
+        } else {
+          errorMsg = 'เซิร์ฟเวอร์ AI for Thai มีปัญหาชั่วคราว กรุณาลองใหม่';
+        }
       } else if (error.message) {
         errorMsg = error.message;
       }

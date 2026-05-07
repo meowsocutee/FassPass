@@ -1,0 +1,167 @@
+/* ============================================
+   LPR Scanner Modal — White Theme
+   Matches reservation-detail modal style
+   ============================================ */
+
+// --- Option Card ---
+.lpr-option-card {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    background: white;
+    border: 1px solid #e2e8f0; // gray-200
+    border-radius: 12px;
+    padding: 14px;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    -webkit-tap-highlight-color: transparent;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.04);
+    width: 100%;
+
+    &:active {
+        transform: scale(0.98);
+        background: #f8fafc; // gray-50
+        border-color: #cbd5e1; // gray-300
+    }
+}
+
+// --- Camera ---
+.camera-live-wrap {
+    display: flex;
+    flex-direction: column;
+    gap: 0;
+}
+
+.camera-viewfinder {
+    position: relative;
+    border-radius: 12px;
+    overflow: hidden;
+    background: black;
+    min-height: 280px;
+    border: 1px solid #e2e8f0;
+}
+
+.camera-video {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    display: block;
+}
+
+.camera-canvas {
+    display: none;
+}
+
+.viewfinder-overlay {
+    position: absolute;
+    inset: 0;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    pointer-events: none;
+}
+
+.viewfinder-frame {
+    width: 75%;
+    aspect-ratio: 3 / 1;
+    position: relative;
+    border: 2px solid rgba(255, 255, 255, 0.3);
+    border-radius: 8px;
+
+    .corner {
+        position: absolute;
+        width: 22px;
+        height: 22px;
+        border: 3px solid #3b82f6; // blue-500
+
+        &.top-left {
+            top: -2px;
+            left: -2px;
+            border-right: none;
+            border-bottom: none;
+            border-top-left-radius: 8px;
+        }
+
+        &.top-right {
+            top: -2px;
+            right: -2px;
+            border-left: none;
+            border-bottom: none;
+            border-top-right-radius: 8px;
+        }
+
+        &.bottom-left {
+            bottom: -2px;
+            left: -2px;
+            border-right: none;
+            border-top: none;
+            border-bottom-left-radius: 8px;
+        }
+
+        &.bottom-right {
+            bottom: -2px;
+            right: -2px;
+            border-left: none;
+            border-top: none;
+            border-bottom-right-radius: 8px;
+        }
+    }
+}
+
+.capture-btn {
+    width: 64px;
+    height: 64px;
+    border-radius: 50%;
+    border: 4px solid #3b82f6;
+    background: transparent;
+    cursor: pointer;
+    padding: 4px;
+    transition: transform 0.15s ease;
+    -webkit-tap-highlight-color: transparent;
+
+    &:active {
+        transform: scale(0.9);
+    }
+}
+
+.capture-btn-inner {
+    width: 100%;
+    height: 100%;
+    border-radius: 50%;
+    background: #3b82f6;
+}
+
+// --- Scanning Animation ---
+.scanning-image-wrap {
+    position: relative;
+    width: 80%;
+    border-radius: 12px;
+    overflow: hidden;
+    border: 1px solid #e2e8f0;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+}
+
+.scan-line-anim {
+    position: absolute;
+    left: 0;
+    right: 0;
+    height: 3px;
+    background: linear-gradient(90deg, transparent, #3b82f6, transparent);
+    box-shadow: 0 0 10px rgba(59, 130, 246, 0.4);
+    animation: scanLine 1.8s ease-in-out infinite;
+}
+
+@keyframes scanLine {
+    0% {
+        top: 0;
+    }
+
+    50% {
+        top: 100%;
+    }
+
+    100% {
+        top: 0;
+    }
+}
