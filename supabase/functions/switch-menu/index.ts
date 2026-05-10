@@ -67,13 +67,13 @@ serve(async (req) => {
     }
 
     try {
-        const { user_id, role } = await req.json()
+        const { user_id, role, role_level } = await req.json()
 
         if (!user_id) throw new Error('Missing user_id')
 
-        console.log(`[switch-menu] Request: user_id=${user_id}, role=${role}`)
+        console.log(`[switch-menu] Request: user_id=${user_id}, role=${role}, role_level=${role_level}`)
 
-        // 1. Fetch line_id from profiles table
+        // 1. Update profile role and fetch line_id
         const supabase = createClient(
             Deno.env.get('SUPABASE_URL') ?? '',
             Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''
@@ -81,12 +81,13 @@ serve(async (req) => {
 
         const { data: profileData, error: profileError } = await supabase
             .from('profiles')
-            .select('line_id')
+            .update({ role: role, role_level: role_level })
             .eq('id', user_id)
+            .select('line_id')
             .single()
 
         if (profileError) {
-            throw new Error(`Failed to fetch profile: ${profileError.message}`)
+            throw new Error(`Failed to update profile: ${profileError.message}`)
         }
 
         const lineId = profileData?.line_id
