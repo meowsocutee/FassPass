@@ -27,17 +27,17 @@ export class Tab3Page implements OnInit {
     private parkingService: ParkingDataService,
     private modalCtrl: ModalController,
     private toastCtrl: ToastController,
-    private alertCtrl: AlertController 
+    private alertCtrl: AlertController
   ) { }
 
   ngOnInit() {
     this.parkingService.userProfile$.subscribe(p => { if (p) this.userProfile = p; });
     this.parkingService.vehicles$.subscribe(v => {
-      
+
       this.vehicles = [...v].sort((a, b) => {
         if (a.isDefault && !b.isDefault) return -1;
         if (!a.isDefault && b.isDefault) return 1;
-        return 0; 
+        return 0;
       });
     });
   }
@@ -48,7 +48,7 @@ export class Tab3Page implements OnInit {
 
   async selectVehicle(vehicleId: number | string) {
     const selectedCar = this.vehicles.find(v => v.id === vehicleId);
-    if (!selectedCar || selectedCar.isDefault) return; 
+    if (!selectedCar || selectedCar.isDefault) return;
 
     const alert = await this.alertCtrl.create({
       header: 'ตั้งเป็นยานพาหนะหลัก',
@@ -100,10 +100,10 @@ export class Tab3Page implements OnInit {
         return;
       }
 
-      
+
       const newVehicle: Partial<Vehicle> = {
         ...data,
-        
+
       };
 
       console.log('[Tab3Page] Submitting new vehicle:', newVehicle);
@@ -117,7 +117,7 @@ export class Tab3Page implements OnInit {
       } catch (error: any) {
         console.error('[Tab3Page] Failed to add vehicle:', error);
 
-        
+
         let msg = 'เกิดข้อผิดพลาด ไม่สามารถเพิ่มยานพาหนะได้';
         if (error.message) {
           msg = error.message;
@@ -146,14 +146,14 @@ export class Tab3Page implements OnInit {
     if (role === 'confirm' && data) {
       console.log('[Tab3Page] Submitting edited vehicle:', data);
       try {
-        
+
         const editedVehicle = {
-          ...vehicle, 
+          ...vehicle,
           ...data
         } as Vehicle;
 
-        
-        
+
+
         await this.parkingService.updateVehicle(editedVehicle);
         console.log('[Tab3Page] Vehicle edit workflow complete');
 
@@ -170,7 +170,7 @@ export class Tab3Page implements OnInit {
     const modal = await this.modalCtrl.create({
       component: EditProfileModalComponent,
       componentProps: {
-        currentProfile: this.userProfile 
+        currentProfile: this.userProfile
       },
       breakpoints: [0, 0.55, 1],
       initialBreakpoint: 0.55,
@@ -182,8 +182,8 @@ export class Tab3Page implements OnInit {
     const { data, role } = await modal.onDidDismiss();
 
     if (role === 'confirm' && data) {
-      
-      
+
+
       this.userProfile = { ...this.userProfile, ...data };
     }
   }
@@ -248,14 +248,14 @@ export class Tab3Page implements OnInit {
     const modal = await this.modalCtrl.create({
       component: SwitchMenuModalComponent,
       componentProps: { currentProfile: this.userProfile },
-      breakpoints: [0, 0.55],
-      initialBreakpoint: 0.55,
+      breakpoints: [0, 9],
+      initialBreakpoint: 9,
     });
     await modal.present();
 
     const { data, role } = await modal.onDidDismiss();
     if (role === 'confirm' && data && this.userProfile.id) {
-      
+
       this.parkingService.loadUserProfile(this.userProfile.id);
     }
   }
@@ -281,7 +281,7 @@ export class Tab3Page implements OnInit {
     }
 
     let contentHtml = '';
-    
+
     if (item.title === 'เงื่อนไขการใช้งาน') {
       contentHtml = `
         <h2>ข้อตกลงและเงื่อนไขการใช้บริการ</h2>
