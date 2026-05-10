@@ -8,9 +8,9 @@ const corsHeaders = {
 
 // ========== Rich Menu Mapping ==========
 const ROLE_MENU_MAP: Record<string, string> = {
-    'User': 'richmenu-5c02fbef90e4bd69fab12ca54930eda1',
-    'Host': 'richmenu-03e2fe912e6c306e29944433283904df',
-    'Visitor': 'richmenu-b7df5d101e578a5c49ba36f057593943',
+    'User': 'richmenu-4d93f148f681202401da651443fafbe4',
+    'Host': 'richmenu-f9142e7b1a3fe67413309cdf6f30d358',
+    'Visitor': 'richmenu-3b6ff5e7de90e7e26f619cd2d718f353',
 }
 
 /** Link or Unlink Rich Menu based on role */
