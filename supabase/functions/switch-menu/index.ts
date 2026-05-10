@@ -10,9 +10,9 @@ const corsHeaders = {
 // Maps role → LINE Rich Menu ID
 // Guest Menu (richmenu-f406d0b3e16bb2fdf467d74cba4e9a98) is the Default in LINE system — no need to link.
 const ROLE_MENU_MAP: Record<string, string> = {
-    'User': 'richmenu-813d28d0f14917506780be708a65334f',
-    'Host': 'richmenu-dadbe99fd8b1ab84eebb42d71d2c22f1',
-    'Visitor': 'richmenu-7111798bc6b6dc69fcf279e88fd0a3e5',
+    'User': 'richmenu-5c02fbef90e4bd69fab12ca54930eda1',
+    'Host': 'richmenu-03e2fe912e6c306e29944433283904df',
+    'Visitor': 'richmenu-b7df5d101e578a5c49ba36f057593943',
 }
 
 /**
