@@ -72,7 +72,7 @@ export class LineService {
           'Content-Type': 'application/json',
           'Authorization': `Bearer ${environment.supabaseKey}`
         },
-        body: JSON.stringify({ userId, role })
+        body: JSON.stringify({ user_id: userId, role })
       });
 
       if (!response.ok) {

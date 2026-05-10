@@ -253,7 +253,7 @@ export class AuthService {
   }
   async changeRichMenu(userId: string, newRole: string) {
     const { data, error } = await this.supabase.functions.invoke('switch-menu', {
-      body: { userId, role: newRole }
+      body: { user_id: userId, role: newRole }
     });
     if (error) throw error;
     return data;

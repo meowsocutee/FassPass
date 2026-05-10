@@ -6,6 +6,57 @@ const corsHeaders = {
     'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 }
 
+// ========== Rich Menu Mapping ==========
+const ROLE_MENU_MAP: Record<string, string> = {
+    'User': 'richmenu-813d28d0f14917506780be708a65334f',
+    'Host': 'richmenu-dadbe99fd8b1ab84eebb42d71d2c22f1',
+    'Visitor': 'richmenu-7111798bc6b6dc69fcf279e88fd0a3e5',
+}
+
+/** Link or Unlink Rich Menu based on role */
+async function syncRichMenu(lineId: string, role: string | null) {
+    const token = Deno.env.get('LINE_CHANNEL_ACCESS_TOKEN')
+    if (!token || !lineId) {
+        console.warn('[line-login-v2] Skipping Rich Menu sync: no token or line_id')
+        return
+    }
+
+    const menuId = role ? ROLE_MENU_MAP[role] : null
+
+    try {
+        if (menuId) {
+            // Link specific Rich Menu
+            const url = `https://api.line.me/v2/bot/user/${lineId}/richmenu/${menuId}`
+            const res = await fetch(url, {
+                method: 'POST',
+                headers: { 'Authorization': `Bearer ${token}` },
+            })
+            if (!res.ok) {
+                const errText = await res.text()
+                console.error(`[line-login-v2] LINE Link API Error (${res.status}):`, errText)
+            } else {
+                console.log(`[line-login-v2] ✅ Rich Menu linked: ${role} → ${menuId}`)
+            }
+        } else {
+            // Unlink to revert to default Guest Menu
+            const url = `https://api.line.me/v2/bot/user/${lineId}/richmenu`
+            const res = await fetch(url, {
+                method: 'DELETE',
+                headers: { 'Authorization': `Bearer ${token}` },
+            })
+            if (!res.ok) {
+                const errText = await res.text()
+                console.error(`[line-login-v2] LINE Unlink API Error (${res.status}):`, errText)
+            } else {
+                console.log(`[line-login-v2] ✅ Rich Menu unlinked (Guest Menu active)`)
+            }
+        }
+    } catch (e) {
+        console.error('[line-login-v2] Rich Menu sync failed:', e)
+        // Don't throw — login should still succeed even if menu switch fails
+    }
+}
+
 // helper สำหรับ log (กัน error ทำให้ login พัง)
 async function logActivity(supabaseAdmin: any, payload: any) {
     try {
@@ -112,6 +163,15 @@ serve(async (req) => {
             updated_at: new Date().toISOString()
         }, { onConflict: 'id' })
 
+        // 3.5️⃣ Fetch current role for Rich Menu binding
+        const { data: updatedProfile } = await supabaseAdmin
+            .from('profiles')
+            .select('role')
+            .eq('id', anonymousUid)
+            .single()
+
+        const currentRole = updatedProfile?.role ?? 'Visitor'
+
         // 4️⃣ Upgrade anonymous user
         const targetEmail = `${lineUserId}@line.placeholder.com`
         const tempPassword = crypto.randomUUID()
@@ -134,6 +194,11 @@ serve(async (req) => {
             })
 
         if (authError) throw authError
+
+        // 5.5️⃣ Bind Rich Menu based on current role
+        if (lineUserId) {
+            await syncRichMenu(lineUserId, currentRole)
+        }
 
         // 6️⃣ Log success
         await logActivity(supabaseAdmin, {
