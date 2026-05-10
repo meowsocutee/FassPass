@@ -248,8 +248,8 @@ export class Tab3Page implements OnInit {
     const modal = await this.modalCtrl.create({
       component: SwitchMenuModalComponent,
       componentProps: { currentProfile: this.userProfile },
-      breakpoints: [0, 9],
-      initialBreakpoint: 9,
+      breakpoints: [0, 0.9],
+      initialBreakpoint: 0.9,
     });
     await modal.present();
 
