@@ -179,6 +179,7 @@
         <h3 class="text-base font-semibold mb-3 mt-6 text-[#666] pl-1">อื่นๆ</h3>
         <ion-list class="bg-white rounded-2xl p-0 overflow-hidden shadow-sm border border-gray-100">
           <ion-item button detail lines="full" *ngFor="let item of otherSettings"
+            (click)="openSetting(item)"
             class="[--padding-start:16px] [--inner-padding-end:16px] [--min-height:56px] last:[--border-width:0]">
             <div class="mr-3 flex items-center justify-center w-8 h-8 bg-[#f5f8ff] rounded-lg" slot="start">
               <ion-icon [name]="item.icon" class="text-lg text-[#1a73e8]"></ion-icon>

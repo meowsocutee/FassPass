@@ -7,6 +7,7 @@ import { AddVehicleModalComponent } from '../modal/add-vehicle/add-vehicle-modal
 import { EditProfileModalComponent } from '../modal/edit-profile-modal/edit-profile-modal.component';
 import { InviteVisitorModalComponent } from '../modal/invite-visitor/invite-visitor-modal.component';
 import { SwitchMenuModalComponent } from '../components/switch-menu-modal/switch-menu-modal.component';
+import { DocumentModalComponent } from '../modal/document-modal/document-modal.component';
 
 @Component({
   selector: 'app-tab3',
@@ -270,6 +271,61 @@ export class Tab3Page implements OnInit {
     const { data, role } = await modal.onDidDismiss();
     if (role === 'confirm' && data) {
       console.log('Invite created:', data);
+    }
+  }
+
+  async openSetting(item: SettingItem) {
+    if (item.title === 'เวอร์ชันแอปพลิเคชัน') {
+      this.showToast(`เวอร์ชันปัจจุบัน: ${item.value || '1.0.0'}`, 'success');
+      return;
+    }
+
+    let contentHtml = '';
+    
+    if (item.title === 'เงื่อนไขการใช้งาน') {
+      contentHtml = `
+        <h2>ข้อตกลงและเงื่อนไขการใช้บริการ</h2>
+        <p>ยินดีต้อนรับสู่แอปพลิเคชัน FASTPAST การใช้งานแอปพลิเคชันนี้อยู่ภายใต้เงื่อนไขดังต่อไปนี้:</p>
+        <ul>
+          <li>ผู้ใช้ต้องให้ข้อมูลที่เป็นความจริงในการลงทะเบียน</li>
+          <li>การจองที่จอดรถต้องเป็นไปตามกฎระเบียบของสถานที่นั้นๆ</li>
+          <li>บริษัทไม่รับผิดชอบต่อความเสียหายใดๆ ที่เกิดขึ้นกับยานพาหนะ</li>
+          <li>ผู้ใช้ต้องปฏิบัติตามกฎหมายจราจรอย่างเคร่งครัด</li>
+        </ul>
+        <p><strong>การยอมรับเงื่อนไข:</strong> การใช้งานแอปพลิเคชันนี้ถือว่าคุณยอมรับเงื่อนไขทั้งหมด</p>
+      `;
+    } else if (item.title === 'นโยบายความเป็นส่วนตัว') {
+      contentHtml = `
+        <h2>นโยบายความเป็นส่วนตัว</h2>
+        <p>แอปพลิเคชันให้ความสำคัญกับข้อมูลส่วนบุคคลของคุณ:</p>
+        <ul>
+          <li><strong>การเก็บข้อมูล:</strong> เราจัดเก็บเฉพาะข้อมูลที่จำเป็น เช่น ทะเบียนรถ เบอร์โทรศัพท์</li>
+          <li><strong>การใช้งานข้อมูล:</strong> เพื่ออำนวยความสะดวกในการเข้าออกและจองที่จอดรถ</li>
+          <li><strong>การเปิดเผยข้อมูล:</strong> ข้อมูลของคุณจะไม่ถูกเปิดเผยแก่บุคคลที่สามโดยไม่ได้รับอนุญาต</li>
+          <li><strong>ความปลอดภัย:</strong> เรามีมาตรการรักษาความปลอดภัยของข้อมูลขั้นสูงสุด</li>
+        </ul>
+        <p>หากมีข้อสงสัยโปรดติดต่อฝ่ายสนับสนุนลูกค้า</p>
+      `;
+    } else if (item.title === 'เกี่ยวกับเรา') {
+      contentHtml = `
+        <h2>เกี่ยวกับ FASTPAST</h2>
+        <p>FASTPAST เป็นแพลตฟอร์มที่ช่วยให้การจองและเข้าจอดรถเป็นเรื่องง่ายและรวดเร็ว</p>
+        <p>พัฒนาโดยทีมวิศวกรผู้เชี่ยวชาญด้านระบบลานจอดรถอัจฉริยะ พร้อมด้วยเทคโนโลยี AI ในการอ่านป้ายทะเบียนที่แม่นยำ</p>
+        <p><strong>ติดต่อเรา:</strong> support@fastpast.com</p>
+      `;
+    }
+
+    if (contentHtml) {
+      const modal = await this.modalCtrl.create({
+        component: DocumentModalComponent,
+        componentProps: {
+          title: item.title,
+          contentHtml: contentHtml
+        },
+        breakpoints: [0, 0.5, 0.85, 1],
+        initialBreakpoint: 0.85,
+      });
+      await modal.present();
     }
   }
 }
