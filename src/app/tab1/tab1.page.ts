@@ -143,7 +143,9 @@ export class Tab1Page implements OnInit, OnDestroy, AfterViewInit {
       this.userProfile = p;
     });
 
-    this.profileIdSub = this.reservationService.currentProfileId$.subscribe(id => {
+    this.profileIdSub = this.reservationService.currentProfileId$.pipe(
+      distinctUntilChanged()
+    ).subscribe(id => {
       if (id) {
         this.loadBuildingData();
         this.loadRealData();

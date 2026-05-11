@@ -1,4 +1,5 @@
-import { Component, OnInit } from '@angular/core';
+import { Component, OnDestroy, OnInit } from '@angular/core';
+import { Subscription } from 'rxjs';
 import { AlertController, ModalController, ToastController } from '@ionic/angular';
 import { SettingItem, UserProfile, Vehicle } from '../data/models';
 import { ParkingDataService } from '../services/parking-data.service';
@@ -15,13 +16,15 @@ import { DocumentModalComponent } from '../modal/document-modal/document-modal.c
   styleUrls: ['tab3.page.scss'],
   standalone: false,
 })
-export class Tab3Page implements OnInit {
+export class Tab3Page implements OnInit, OnDestroy {
   selectedSegment: 'dashboard' | 'list' = 'dashboard';
 
   userProfile: UserProfile = { name: '', phone: '', avatar: '', role: 'Visitor' };
   vehicles: Vehicle[] = [];
   generalSettings = GENERAL_SETTINGS;
   otherSettings = OTHER_SETTINGS;
+
+  private subs = new Subscription();
 
   constructor(
     private parkingService: ParkingDataService,
@@ -31,15 +34,22 @@ export class Tab3Page implements OnInit {
   ) { }
 
   ngOnInit() {
-    this.parkingService.userProfile$.subscribe(p => { if (p) this.userProfile = p; });
-    this.parkingService.vehicles$.subscribe(v => {
+    this.subs.add(
+      this.parkingService.userProfile$.subscribe(p => { if (p) this.userProfile = p; })
+    );
+    this.subs.add(
+      this.parkingService.vehicles$.subscribe(v => {
+        this.vehicles = [...v].sort((a, b) => {
+          if (a.isDefault && !b.isDefault) return -1;
+          if (!a.isDefault && b.isDefault) return 1;
+          return 0;
+        });
+      })
+    );
+  }
 
-      this.vehicles = [...v].sort((a, b) => {
-        if (a.isDefault && !b.isDefault) return -1;
-        if (!a.isDefault && b.isDefault) return 1;
-        return 0;
-      });
-    });
+  ngOnDestroy() {
+    this.subs.unsubscribe();
   }
 
   segmentChanged(event: any) {

@@ -7,7 +7,7 @@ import { ReservationDetailComponent } from '../modal/reservation-detail/reservat
 import { SupabaseService } from '../services/supabase.service';
 // import { BuildingDetailComponent } from '../modal/building-detail/building-detail.component';
 import { Subject, Subscription } from 'rxjs';
-import { debounceTime, distinctUntilChanged } from 'rxjs/operators';
+import { debounceTime, distinctUntilChanged, skip } from 'rxjs/operators';
 
 @Component({
   selector: 'app-tab2',
@@ -28,6 +28,7 @@ export class Tab2Page implements OnInit, OnDestroy {
 
   private searchSubject = new Subject<string>();
   private searchSub!: Subscription;
+  private subs = new Subscription();
 
   
   monthOptions: { value: string, label: string }[] = [
@@ -69,22 +70,30 @@ export class Tab2Page implements OnInit, OnDestroy {
   ) { }
   
   ngOnInit() {
-    this.parkingService.bookings$.subscribe(bookings => {
-      this.reservationBookings = bookings || [];
-      this.mergeAllBookings();
-    });
+    this.subs.add(
+      this.parkingService.bookings$.subscribe(bookings => {
+        this.reservationBookings = bookings || [];
+        this.mergeAllBookings();
+      })
+    );
 
-    this.reservationService.currentProfileId$.subscribe(async (userId: string) => {
-      if (userId) {
-        await this.loadRealReservations();
-        await this.loadAccessPassBookings(userId);
+    this.subs.add(
+      this.reservationService.currentProfileId$.pipe(
+        distinctUntilChanged(),
+        skip(1)
+      ).subscribe(async (userId: string) => {
+        if (userId) {
+          await this.loadRealReservations();
+          await this.loadAccessPassBookings(userId);
 
-        if (this.reservationsSubscription) {
-          this.reservationsSubscription.unsubscribe();
+          if (this.reservationsSubscription) {
+            this.reservationsSubscription.unsubscribe();
+            this.reservationsSubscription = null;
+          }
+          this.setupRealtimeSubscription();
         }
-        this.setupRealtimeSubscription();
-      }
-    });
+      })
+    );
 
     this.searchSub = this.searchSubject.pipe(
       debounceTime(400),
@@ -99,12 +108,17 @@ export class Tab2Page implements OnInit, OnDestroy {
     if (this.searchSub) {
       this.searchSub.unsubscribe();
     }
+    this.subs.unsubscribe();
+    if (this.reservationsSubscription) {
+      this.reservationsSubscription.unsubscribe();
+      this.reservationsSubscription = null;
+    }
   }
 
   async ionViewWillEnter() {
-    await this.loadRealReservations();
     const profileId = this.reservationService.getCurrentProfileId();
     if (profileId) {
+      await this.loadRealReservations();
       await this.loadAccessPassBookings(profileId);
     }
     this.setupRealtimeSubscription();
