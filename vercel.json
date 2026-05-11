@@ -1,0 +1,12 @@
+{
+  "rewrites": [
+    {
+      "source": "/api/aiforthai/:match*",
+      "destination": "https://api.aiforthai.in.th/:match*"
+    },
+    {
+      "source": "/(.*)",
+      "destination": "/index.html"
+    }
+  ]
+}
