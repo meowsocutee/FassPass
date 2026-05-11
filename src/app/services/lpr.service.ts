@@ -17,16 +17,16 @@ export interface LprResult {
 })
 export class LprService {
 
-  // Panyapradit-LPR API (AI for Thai)
+  // LPR API (AI for Thai)
   // Dev: ใช้ proxy ผ่าน /api/aiforthai เพื่อหลีกเลี่ยง CORS
-  // Prod: เรียก API ตรง (ถ้า deploy เป็น native app หรือมี server proxy)
-  private readonly API_URL = '/api/aiforthai/panyapradit-lpr';
+  // Prod: เรียก API ตรง (ถ้า deploy เป็น native app หรือมี server proxy) หรือ Vercel rewrite
+  private readonly API_URL = '/api/aiforthai/lpr-iapp';
   private readonly API_KEY = 'su2arg5kPh5jGEX1wSAUPB79vvdLuDdI';
 
   constructor(private http: HttpClient) {}
 
   /**
-   * ถ่ายรูปจากกล้องและส่งไปยัง AI for Thai Panyapradit-LPR API
+   * ถ่ายรูปจากกล้องและส่งไปยัง AI for Thai LPR API
    * @returns Promise<LprResult>
    */
   async captureAndRecognize(): Promise<LprResult> {
@@ -51,16 +51,7 @@ export class LprService {
   }
 
   /**
-   * ส่งไฟล์รูปภาพไปยัง AI for Thai Panyapradit-LPR API
-   *
-   * API Response Format:
-   * {
-   *   "box": [0.478, 0.372, 0.682, 0.611],
-   *   "r_char": "/ฎผ",
-   *   "r_digit": "6557",
-   *   "r_province": "กรุงเทพมหานคร",
-   *   "recognition": "/ฎผ 6557\nกรุงเทพมหานคร"
-   * }
+   * ส่งไฟล์รูปภาพไปยัง AI for Thai LPR API (lpr-iapp)
    */
   async recognizePlate(imageFile: File): Promise<LprResult> {
     try {
@@ -78,45 +69,50 @@ export class LprService {
         this.http.post(this.API_URL, formData, { headers })
       );
 
-      console.log('[LprService] Panyapradit-LPR Response:', response);
+      console.log('[LprService] LPR Response:', response);
 
-      // Parse Panyapradit-LPR response format
-      if (response) {
-        const rChar = response.r_char || '';
-        const rDigit = response.r_digit || '';
-        const rProvince = response.r_province || '';
-        const recognition = response.recognition || '';
+      // Parse lpr-iapp response format
+      if (response && response.message === 'success' && response.status === 200) {
+        if (response.is_missing_plate === 'yes') {
+          return {
+            success: false,
+            licensePlate: '',
+            province: '',
+            charPart: '',
+            digitPart: '',
+            raw: response,
+            error: 'ไม่พบป้ายทะเบียนในรูปภาพ กรุณาลองใหม่'
+          };
+        }
 
-        // สร้าง license plate จาก r_char + r_digit
-        const licensePlate = `${rChar} ${rDigit}`.trim();
+        const lpNumber = response.lp_number || '';
+        const provinceRaw = response.province || '';
+        
+        // แยกตัวอักษรและตัวเลข (เช่น "2ฒช6726" -> "2ฒช", "6726")
+        let rChar = lpNumber;
+        let rDigit = '';
+        const match = lpNumber.match(/^(.+?)(\d+)$/);
+        if (match) {
+            rChar = match[1];
+            rDigit = match[2];
+        }
 
-        if (licensePlate && licensePlate !== ' ') {
+        // ดึงชื่อจังหวัดภาษาไทยออกจากวงเล็บ (เช่น "th-10:Bangkok (กรุงเทพมหานคร)" -> "กรุงเทพมหานคร")
+        let rProvince = provinceRaw;
+        const provinceMatch = provinceRaw.match(/\(([^)]+)\)/);
+        if (provinceMatch) {
+            rProvince = provinceMatch[1];
+        }
+
+        if (lpNumber && lpNumber !== ' ') {
           return {
             success: true,
-            licensePlate: licensePlate,
+            licensePlate: lpNumber,
             province: rProvince,
             charPart: rChar,
             digitPart: rDigit,
             raw: response
           };
-        }
-
-        // ถ้าไม่มี r_char/r_digit แต่มี recognition ให้ใช้ recognition แทน
-        if (recognition) {
-          const lines = recognition.split('\n');
-          const plateText = lines[0] || '';
-          const province = lines[1] || rProvince;
-
-          if (plateText) {
-            return {
-              success: true,
-              licensePlate: plateText.trim(),
-              province: province.trim(),
-              charPart: rChar,
-              digitPart: rDigit,
-              raw: response
-            };
-          }
         }
 
         // ไม่พบป้ายทะเบียน
@@ -137,7 +133,7 @@ export class LprService {
         province: '',
         charPart: '',
         digitPart: '',
-        error: 'ไม่ได้รับข้อมูลจาก API'
+        error: response?.message || 'ไม่ได้รับข้อมูลจาก API'
       };
     } catch (error: any) {
       console.error('[LprService] API Error:', error);
