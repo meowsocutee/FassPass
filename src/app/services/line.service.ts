@@ -29,9 +29,8 @@ export class LineService {
 
   login() {
     if (!liff.isLoggedIn()) {
-      // Use root URL to strictly match the LINE Developer Console Endpoint URL
-      // This prevents liff.init() from silently ignoring the ?code parameter on sub-paths
-      const cleanUrl = window.location.origin + '/';
+      // Use clean URL with pathname (without query parameters) to match the allowed Callback URL
+      const cleanUrl = window.location.origin + window.location.pathname;
       liff.login({ redirectUri: cleanUrl });
     }
   }
