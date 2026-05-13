@@ -16,7 +16,7 @@ export class SupabaseService {
         auth: {
           persistSession: true,
           autoRefreshToken: true,
-          detectSessionInUrl: true,
+          detectSessionInUrl: false, // <-- Disable to prevent conflict with LIFF
           
           lock: (name, acquireTimeout, fn) => fn(),
         }

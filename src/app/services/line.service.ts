@@ -29,7 +29,9 @@ export class LineService {
 
   login() {
     if (!liff.isLoggedIn()) {
-      liff.login({ redirectUri: window.location.href });
+      // Use clean URL without query parameters to prevent nesting code/state params
+      const cleanUrl = window.location.origin + window.location.pathname;
+      liff.login({ redirectUri: cleanUrl });
     }
   }
 
