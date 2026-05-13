@@ -171,31 +171,56 @@ serve(async (req) => {
             }
         }
 
-        // 4️⃣ Ensure User Auth Exists & Update Credentials
+        // 4️⃣ Generate Deterministic Password
         const targetEmail = `${lineUserId}@line.placeholder.com`
-        const tempPassword = crypto.randomUUID()
-
-        // Update the target user's auth data
-        const { error: updateUserError } = await supabaseAdmin.auth.admin.updateUserById(targetUserId!, {
-            email: targetEmail,
-            password: tempPassword,
-            email_confirm: true,
-            user_metadata: {
-                name: userName,
-                avatar: verifiedData.picture
-            }
-        })
-
-        if (updateUserError) throw updateUserError
+        const encoder = new TextEncoder()
+        const data = encoder.encode(lineUserId + (Deno.env.get('SUPABASE_ANON_KEY') || 'secret'))
+        const hashBuffer = await crypto.subtle.digest('SHA-256', data)
+        const hashArray = Array.from(new Uint8Array(hashBuffer))
+        const deterministicPassword = hashArray.map(b => b.toString(16).padStart(2, '0')).join('') + 'A1!'
 
         // 5️⃣ Generate Auth Session
-        const { data: authData, error: authError } =
-            await supabaseAdmin.auth.signInWithPassword({
-                email: targetEmail,
-                password: tempPassword
-            })
+        let authData: any = null
+        
+        // Attempt to login first (prevents session revocation if password is correct)
+        const loginAttempt = await supabaseAdmin.auth.signInWithPassword({
+            email: targetEmail,
+            password: deterministicPassword
+        })
 
-        if (authError) throw authError
+        if (loginAttempt.error) {
+            console.log(`[line-login-v2] First login failed, updating password for user ${targetUserId}`)
+            // Update the target user's auth data and set the deterministic password
+            // Note: This will revoke existing sessions ONCE, but future logins will use the same password.
+            const { error: updateUserError } = await supabaseAdmin.auth.admin.updateUserById(targetUserId!, {
+                email: targetEmail,
+                password: deterministicPassword,
+                email_confirm: true,
+                user_metadata: {
+                    name: userName,
+                    avatar: verifiedData.picture
+                }
+            })
+            if (updateUserError) throw updateUserError
+
+            const retryLogin = await supabaseAdmin.auth.signInWithPassword({
+                email: targetEmail,
+                password: deterministicPassword
+            })
+            if (retryLogin.error) throw retryLogin.error
+            authData = retryLogin.data
+        } else {
+            authData = loginAttempt.data
+            // Just update metadata without changing password
+            const { error: updateUserError } = await supabaseAdmin.auth.admin.updateUserById(targetUserId!, {
+                email: targetEmail,
+                user_metadata: {
+                    name: userName,
+                    avatar: verifiedData.picture
+                }
+            })
+            if (updateUserError) throw updateUserError
+        }
 
         // 5.5️⃣ Clean up orphaned anonymous user if we switched accounts
         if (isReLogin && targetUserId !== anonymousUid && anonymousUid) {
