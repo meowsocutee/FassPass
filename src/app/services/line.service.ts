@@ -29,8 +29,9 @@ export class LineService {
 
   login() {
     if (!liff.isLoggedIn()) {
-      // Use clean URL without query parameters to prevent nesting code/state params
-      const cleanUrl = window.location.origin + window.location.pathname;
+      // Use root URL to strictly match the LINE Developer Console Endpoint URL
+      // This prevents liff.init() from silently ignoring the ?code parameter on sub-paths
+      const cleanUrl = window.location.origin + '/';
       liff.login({ redirectUri: cleanUrl });
     }
   }
