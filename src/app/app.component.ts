@@ -42,6 +42,11 @@ export class AppComponent implements OnInit {
         const { data } = await modal.onDidDismiss();
         if (data?.role === 'guest') {
           this.isGuestChoice = true;
+        } else if (data?.isLoggedIn) {
+          const loggedInUser = await this.authService.getCurrentUser();
+          if (loggedInUser) {
+            this.reservationService.setCurrentProfileId(loggedInUser.id);
+          }
         }
       }
     }
@@ -59,6 +64,10 @@ export class AppComponent implements OnInit {
     const { data } = await modal.onDidDismiss();
     if (data?.isLoggedIn) {
       console.log('User logged in successfully');
+      const loggedInUser = await this.authService.getCurrentUser();
+      if (loggedInUser) {
+        this.reservationService.setCurrentProfileId(loggedInUser.id);
+      }
     }
   }
 
