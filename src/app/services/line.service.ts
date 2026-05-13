@@ -22,7 +22,6 @@ export class LineService {
       await liff.init({ liffId: this.LIFF_ID });
       console.log('✅ LIFF Initialized');
     } catch (error: any) {
-      alert(`[DEBUG LIFF INIT ERROR] ${error.message || error}`);
       console.error('LIFF Init Error:', error);
     }
   }

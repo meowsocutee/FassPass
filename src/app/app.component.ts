@@ -20,14 +20,6 @@ export class AppComponent implements OnInit {
   ) { }
 
   async ngOnInit() {
-    const url = window.location.href;
-    const hasCode = url.includes('code=');
-    alert(`[DEBUG 1] App Init\nURL: ${url}\nHas Code: ${hasCode}`);
-
-    await this.lineService.initLiff();
-    
-    alert(`[DEBUG 2] After LIFF Init\nisLoggedIn: ${this.lineService.isLoggedIn()}`);
-
     await this.checkAuthStatus();
   }
 
