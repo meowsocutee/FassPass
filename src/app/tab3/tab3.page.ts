@@ -8,6 +8,8 @@ import { EditProfileModalComponent } from '../modal/edit-profile-modal/edit-prof
 import { InviteVisitorModalComponent } from '../modal/invite-visitor/invite-visitor-modal.component';
 import { SwitchMenuModalComponent } from '../components/switch-menu-modal/switch-menu-modal.component';
 import { DocumentModalComponent } from '../modal/document-modal/document-modal.component';
+import { AuthService } from '../services/auth.service';
+import { LineService } from '../services/line.service';
 
 @Component({
   selector: 'app-tab3',
@@ -27,7 +29,9 @@ export class Tab3Page implements OnInit {
     private parkingService: ParkingDataService,
     private modalCtrl: ModalController,
     private toastCtrl: ToastController,
-    private alertCtrl: AlertController
+    private alertCtrl: AlertController,
+    private authService: AuthService,
+    private lineService: LineService
   ) { }
 
   ngOnInit() {
@@ -327,6 +331,36 @@ export class Tab3Page implements OnInit {
       });
       await modal.present();
     }
+  }
+
+  async logout() {
+    const alert = await this.alertCtrl.create({
+      header: 'ยืนยันการออกจากระบบ',
+      message: 'คุณต้องการออกจากระบบและสลับไปใช้บัญชีอื่นใช่หรือไม่?',
+      buttons: [
+        {
+          text: 'ยกเลิก',
+          role: 'cancel',
+          cssClass: 'text-gray-500'
+        },
+        {
+          text: 'ออกจากระบบ',
+          role: 'confirm',
+          cssClass: 'text-red-500 font-bold',
+          handler: async () => {
+            try {
+              await this.authService.signOut();
+              this.lineService.logout();
+              window.location.reload();
+            } catch (err) {
+              console.error('Logout error:', err);
+              this.showToast('เกิดข้อผิดพลาดในการออกจากระบบ', 'error');
+            }
+          }
+        }
+      ]
+    });
+    await alert.present();
   }
 }
 
