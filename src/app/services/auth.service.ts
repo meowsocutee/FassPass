@@ -52,7 +52,7 @@ export class AuthService {
     const currentUid = user?.id;
     if (!currentUid) throw new Error("Could not establish a device anchor (Anonymous UID)");
 
-    const { data, error } = await this.supabase.functions.invoke('line-login', {
+    const { data, error } = await this.supabase.functions.invoke('line-login-v2', {
       body: {
         idToken,
         anonymousUid: currentUid

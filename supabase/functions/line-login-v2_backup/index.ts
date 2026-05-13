@@ -117,66 +117,66 @@ serve(async (req) => {
         lineUserId = verifiedData.sub
         userName = verifiedData.name ?? "Unknown"
 
-        // 2️⃣ Check for Existing User (Device Binding)
-        const { data: existingProfile, error: profileError } = await supabaseAdmin
+        // 2️⃣ Device Binding Check
+        const { data: profile } = await supabaseAdmin
             .from('profiles')
-            .select('*')
+            .select('id')
             .eq('line_id', lineUserId)
             .maybeSingle()
 
-        if (profileError) {
-            console.error("Profile fetch error:", profileError)
-        }
+        if (profile && profile.id !== anonymousUid) {
 
-        let targetUserId = anonymousUid
-        let currentRole = 'Visitor'
-        let isReLogin = false
-
-        if (existingProfile) {
-            // User already exists in the system
-            targetUserId = existingProfile.id
-            currentRole = existingProfile.role || 'Visitor'
-            isReLogin = true
-            
-            console.log(`[line-login-v2] Existing user found. targetUserId: ${targetUserId}`)
-
-            // Optional: If this is a new anonymous session but they have an old account,
-            // we will log them into their old account.
-            if (targetUserId !== anonymousUid) {
-                console.log(`[line-login-v2] Seamless re-login: Switch from anonymous ${anonymousUid} to existing ${targetUserId}`)
-            }
-
-        } else {
-            // 3️⃣ New User: Insert profile
-            // Use insert instead of upsert to avoid overwriting existing roles
-            const { error: insertError } = await supabaseAdmin.from('profiles').insert({
-                id: anonymousUid,
-                line_id: lineUserId,
-                role: 'Visitor', // Default role for new users
-                name: userName,
-                avatar: verifiedData.picture,
-                updated_at: new Date().toISOString()
+            await logActivity(supabaseAdmin, {
+                p_site_id: 'system',
+                p_log_type: 'activity',
+                p_action: 'auth_device_mismatch',
+                p_user_id: profile.id,
+                p_user_name: userName,
+                p_category: 'security',
+                p_status: 'blocked',
+                p_entity_type: 'profiles',
+                p_entity_id: profile.id,
+                p_detail: 'LINE login blocked due to device mismatch',
+                p_changes: null,
+                p_old_data: null,
+                p_new_data: null,
+                p_meta: {
+                    line_id: lineUserId,
+                    ip,
+                    user_agent: userAgent
+                }
             })
 
-            if (insertError) {
-                console.error("Insert profile error:", insertError)
-                // If it fails because id already exists but has no line_id, we can fallback to update
-                if (insertError.code === '23505') {
-                     await supabaseAdmin.from('profiles')
-                        .update({ line_id: lineUserId, name: userName, avatar: verifiedData.picture })
-                        .eq('id', anonymousUid)
-                } else {
-                     throw new Error('Failed to create user profile')
-                }
-            }
+            return new Response(
+                JSON.stringify({ error: "Device Mismatch: LINE นี้ผูกกับอุปกรณ์อื่นอยู่" }),
+                { headers: { ...corsHeaders, 'Content-Type': 'application/json' }, status: 403 }
+            )
         }
 
-        // 4️⃣ Ensure User Auth Exists & Update Credentials
+        // 3️⃣ Upsert profile
+        await supabaseAdmin.from('profiles').upsert({
+            id: anonymousUid,
+            line_id: lineUserId,
+            role: 'Visitor',
+            name: userName,
+            avatar: verifiedData.picture,
+            updated_at: new Date().toISOString()
+        }, { onConflict: 'id' })
+
+        // 3.5️⃣ Fetch current role for Rich Menu binding
+        const { data: updatedProfile } = await supabaseAdmin
+            .from('profiles')
+            .select('role')
+            .eq('id', anonymousUid)
+            .single()
+
+        const currentRole = updatedProfile?.role ?? 'Visitor'
+
+        // 4️⃣ Upgrade anonymous user
         const targetEmail = `${lineUserId}@line.placeholder.com`
         const tempPassword = crypto.randomUUID()
 
-        // Update the target user's auth data
-        const { error: updateUserError } = await supabaseAdmin.auth.admin.updateUserById(targetUserId!, {
+        await supabaseAdmin.auth.admin.updateUserById(anonymousUid!, {
             email: targetEmail,
             password: tempPassword,
             email_confirm: true,
@@ -186,9 +186,7 @@ serve(async (req) => {
             }
         })
 
-        if (updateUserError) throw updateUserError
-
-        // 5️⃣ Generate Auth Session
+        // 5️⃣ Login
         const { data: authData, error: authError } =
             await supabaseAdmin.auth.signInWithPassword({
                 email: targetEmail,
@@ -197,33 +195,23 @@ serve(async (req) => {
 
         if (authError) throw authError
 
-        // 5.5️⃣ Clean up orphaned anonymous user if we switched accounts
-        if (isReLogin && targetUserId !== anonymousUid && anonymousUid) {
-            try {
-                await supabaseAdmin.auth.admin.deleteUser(anonymousUid)
-                console.log(`[line-login-v2] Cleaned up orphaned anonymous user: ${anonymousUid}`)
-            } catch (cleanupError) {
-                console.warn(`[line-login-v2] Failed to cleanup anonymous user: ${anonymousUid}`, cleanupError)
-            }
-        }
-
-        // 6️⃣ Bind Rich Menu based on current role
+        // 5.5️⃣ Bind Rich Menu based on current role
         if (lineUserId) {
             await syncRichMenu(lineUserId, currentRole)
         }
 
-        // 7️⃣ Log success
+        // 6️⃣ Log success
         await logActivity(supabaseAdmin, {
             p_site_id: 'system',
             p_log_type: 'activity',
-            p_action: isReLogin ? 'auth_relogin_success' : 'auth_login_success',
-            p_user_id: targetUserId,
+            p_action: 'auth_login_success',
+            p_user_id: anonymousUid,
             p_user_name: userName,
             p_category: 'security',
             p_status: 'success',
             p_entity_type: 'profiles',
-            p_entity_id: targetUserId,
-            p_detail: isReLogin ? 'User re-logged in via LINE' : 'User logged in via LINE (New)',
+            p_entity_id: anonymousUid,
+            p_detail: 'User logged in via LINE',
             p_changes: null,
             p_old_data: null,
             p_new_data: null,
@@ -231,8 +219,7 @@ serve(async (req) => {
                 line_id: lineUserId,
                 provider: 'line',
                 ip,
-                user_agent: userAgent,
-                previous_anonymous_uid: isReLogin ? anonymousUid : null
+                user_agent: userAgent
             }
         })
 
