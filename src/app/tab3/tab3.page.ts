@@ -349,6 +349,9 @@ export class Tab3Page implements OnInit {
           cssClass: 'text-red-500 font-bold',
           handler: async () => {
             try {
+              if (this.userProfile?.id) {
+                await this.lineService.unlinkRichMenu(this.userProfile.id);
+              }
               await this.authService.signOut();
               this.lineService.logout();
               window.location.reload();

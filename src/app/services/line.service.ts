@@ -91,6 +91,32 @@ export class LineService {
     }
   }
 
+  async unlinkRichMenu(userId: string) {
+    try {
+      console.log(`🔄 Unlinking menu for: ${userId}`);
+      const response = await fetch(this.FUNCTION_URL, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${environment.supabaseKey}`
+        },
+        body: JSON.stringify({ user_id: userId, role: 'Guest', action: 'unlink_only' })
+      });
+
+      if (!response.ok) {
+        const errorText = await response.text();
+        throw new Error(`Function failed: ${response.status} ${errorText}`);
+      }
+
+      console.log('✅ Menu unlinked successfully');
+      return true;
+
+    } catch (error) {
+      console.error('❌ Error unlinking menu:', error);
+      return false;
+    }
+  }
+
   closeWindow() {
     if (liff.isInClient()) {
       liff.closeWindow();

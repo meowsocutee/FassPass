@@ -67,30 +67,40 @@ serve(async (req) => {
     }
 
     try {
-        const { user_id, role, role_level } = await req.json()
+        const { user_id, role, role_level, action } = await req.json()
 
         if (!user_id) throw new Error('Missing user_id')
 
-        console.log(`[switch-menu] Request: user_id=${user_id}, role=${role}, role_level=${role_level}`)
+        console.log(`[switch-menu] Request: user_id=${user_id}, role=${role}, role_level=${role_level}, action=${action}`)
 
-        // 1. Update profile role and fetch line_id
         const supabase = createClient(
             Deno.env.get('SUPABASE_URL') ?? '',
             Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''
         )
 
-        const { data: profileData, error: profileError } = await supabase
-            .from('profiles')
-            .update({ role: role, role_level: role_level })
-            .eq('id', user_id)
-            .select('line_id')
-            .single()
+        let lineId = null;
 
-        if (profileError) {
-            throw new Error(`Failed to update profile: ${profileError.message}`)
+        if (action === 'unlink_only') {
+            // Just fetch line_id without updating the role
+            const { data: profileData, error: profileError } = await supabase
+                .from('profiles')
+                .select('line_id')
+                .eq('id', user_id)
+                .single()
+            if (profileError) throw new Error(`Failed to fetch profile: ${profileError.message}`)
+            lineId = profileData?.line_id
+        } else {
+            // Update profile role and fetch line_id
+            const { data: profileData, error: profileError } = await supabase
+                .from('profiles')
+                .update({ role: role, role_level: role_level })
+                .eq('id', user_id)
+                .select('line_id')
+                .single()
+            if (profileError) throw new Error(`Failed to update profile: ${profileError.message}`)
+            lineId = profileData?.line_id
         }
 
-        const lineId = profileData?.line_id
         if (!lineId) {
             console.warn('[switch-menu] No line_id found for user, skipping LINE API call')
             return new Response(
