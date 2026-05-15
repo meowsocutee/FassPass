@@ -28,78 +28,86 @@
     </ng-container>
   </ion-toolbar>
 
-  
-  <div class="flex gap-3 px-4 py-2.5 bg-white">
-    
-    <div id="month-filter-trigger"
-      class="flex-1 flex items-center justify-between border border-gray-300 rounded-lg h-10 px-3 text-[13px] text-gray-700 bg-white cursor-pointer active:bg-gray-50 transition-colors">
-      <div class="flex items-center overflow-hidden">
-        <ion-icon name="calendar-outline" class="text-[16px] text-[#1a73e8] mr-2 shrink-0"></ion-icon>
-        <span class="truncate font-medium">{{ getSelectedMonthLabel() }}</span>
-      </div>
-      <ion-icon name="chevron-down-outline" class="text-sm text-gray-400 shrink-0 ml-1"></ion-icon>
-    </div>
+  <!-- ── Filter Row: Month + Category ── -->
+  <div class="filter-row">
 
-    <ion-popover trigger="month-filter-trigger" triggerAction="click" dismissOnSelect="true" class="custom-popover">
+    <!-- Month Dropdown -->
+    <div id="month-filter-trigger" class="filter-chip" [class.filter-chip--active]="selectedMonth !== 'all'">
+      <ion-icon name="calendar-outline" class="filter-chip__icon"></ion-icon>
+      <span class="filter-chip__label">{{ getSelectedMonthLabel() }}</span>
+      <ion-icon name="chevron-down-outline" class="filter-chip__arrow"></ion-icon>
+    </div>
+    <ion-popover trigger="month-filter-trigger" triggerAction="click" dismissOnSelect="true">
       <ng-template>
         <ion-content class="ion-padding-vertical">
           <ion-list lines="none" class="m-0 p-0">
-            <ion-item *ngFor="let opt of monthOptions" [button]="true" [detail]="false" (click)="selectMonth(opt.value)"
-              class="mx-2 mb-1 rounded-lg" [color]="selectedMonth === opt.value ? 'primary' : ''"
-              [style.--background]="selectedMonth === opt.value ? '#ebf8f6' : 'white'">
+            <ion-item *ngFor="let opt of monthOptions" [button]="true" [detail]="false"
+              (click)="selectMonth(opt.value)" class="mx-2 mb-1 rounded-xl"
+              [style.--background]="selectedMonth === opt.value ? '#eff6ff' : 'white'">
+              <ion-icon *ngIf="selectedMonth === opt.value" name="checkmark-circle" slot="start" color="primary"></ion-icon>
               <ion-label [class.font-bold]="selectedMonth === opt.value"
-                [class.text-[#1a73e8]]="selectedMonth === opt.value" class="text-sm">{{ opt.label }}</ion-label>
+                [class.text-blue-600]="selectedMonth === opt.value">{{ opt.label }}</ion-label>
             </ion-item>
           </ion-list>
         </ion-content>
       </ng-template>
     </ion-popover>
 
-    
-    <div id="category-filter-trigger"
-      class="flex-1 flex items-center justify-between border border-gray-300 rounded-lg h-10 px-3 text-[13px] text-gray-700 bg-white cursor-pointer active:bg-gray-50 transition-colors">
-      <div class="flex items-center overflow-hidden">
-        <ion-icon name="layers-outline" class="text-[16px] text-[#1a73e8] mr-2 shrink-0"></ion-icon>
-        <span class="truncate font-medium">{{ getSelectedCategoryLabel() }}</span>
-      </div>
-      <ion-icon name="chevron-down-outline" class="text-sm text-gray-400 shrink-0 ml-1"></ion-icon>
+    <!-- Booking Type Dropdown -->
+    <div id="category-filter-trigger" class="filter-chip" [class.filter-chip--active]="selectedCategory !== 'all'">
+      <ion-icon name="layers-outline" class="filter-chip__icon"></ion-icon>
+      <span class="filter-chip__label">{{ getSelectedCategoryLabel() }}</span>
+      <ion-icon name="chevron-down-outline" class="filter-chip__arrow"></ion-icon>
     </div>
-
-    <ion-popover trigger="category-filter-trigger" triggerAction="click" dismissOnSelect="true" class="custom-popover">
+    <ion-popover trigger="category-filter-trigger" triggerAction="click" dismissOnSelect="true">
       <ng-template>
         <ion-content class="ion-padding-vertical">
           <ion-list lines="none" class="m-0 p-0">
             <ion-item *ngFor="let opt of categoryOptions" [button]="true" [detail]="false"
-              (click)="selectCategory(opt.value)" class="mx-2 mb-1 rounded-lg"
-              [color]="selectedCategory === opt.value ? 'primary' : ''"
-              [style.--background]="selectedCategory === opt.value ? '#ebf8f6' : 'white'">
+              (click)="selectCategory(opt.value)" class="mx-2 mb-1 rounded-xl"
+              [style.--background]="selectedCategory === opt.value ? '#eff6ff' : 'white'">
+              <ion-icon *ngIf="selectedCategory === opt.value" name="checkmark-circle" slot="start" color="primary"></ion-icon>
               <ion-label [class.font-bold]="selectedCategory === opt.value"
-                [class.text-[#1a73e8]]="selectedCategory === opt.value" class="text-sm">{{ opt.label }}</ion-label>
+                [class.text-blue-600]="selectedCategory === opt.value">{{ opt.label }}</ion-label>
             </ion-item>
           </ion-list>
         </ion-content>
       </ng-template>
     </ion-popover>
+
+    <!-- Spacer -->
+    <div class="flex-1"></div>
+
+    <!-- Reset (active only when filter set) -->
+    <div *ngIf="selectedMonth !== 'all' || selectedCategory !== 'all'"
+      class="filter-chip filter-chip--reset"
+      (click)="resetFilters()">
+      <ion-icon name="close-circle" class="filter-chip__icon"></ion-icon>
+      ล้างตัวกรอง
+    </div>
   </div>
 
-  
-  <ion-toolbar class="bg-white pb-2 status-toolbar">
-    <ion-segment [(ngModel)]="selectedStatusSegment" (ionChange)="segmentChanged($event)" mode="md"
-      class="bg-transparent">
-      <ion-segment-button value="in_progress"
-        class="min-w-0 flex-1 [--indicator-color:var(--ion-color-primary)] [--color:#999] [--color-checked:var(--ion-color-primary)]">
-        <ion-label class="text-sm font-medium">กำลังดำเนินการ</ion-label>
-      </ion-segment-button>
-      <ion-segment-button value="completed"
-        class="min-w-0 flex-1 [--indicator-color:var(--ion-color-primary)] [--color:#999] [--color-checked:var(--ion-color-primary)]">
-        <ion-label class="text-sm font-medium">เสร็จสิ้น</ion-label>
-      </ion-segment-button>
-      <ion-segment-button value="cancelled"
-        class="min-w-0 flex-1 [--indicator-color:var(--ion-color-primary)] [--color:#999] [--color-checked:var(--ion-color-primary)]">
-        <ion-label class="text-sm font-medium">ยกเลิก/ล้มเหลว</ion-label>
-      </ion-segment-button>
-    </ion-segment>
-  </ion-toolbar>
+  <!-- ── Status Chip Row (Scrollable, touch-friendly) ── -->
+  <div class="status-chip-row">
+    <div class="status-chip-scroll no-scrollbar">
+      <button *ngFor="let seg of statusSegments"
+        class="status-chip"
+        [ngClass]="selectedStatusSegment === seg.value
+          ? $any(seg).activeClass
+          : 'bg-gray-50 text-gray-500 border-gray-200'"
+        (click)="selectStatusSegment(seg.value)">
+        <ion-icon [name]="seg.icon" class="status-chip__icon"></ion-icon>
+        <span class="status-chip__label">{{ seg.label }}</span>
+        <span *ngIf="getSegmentCount(seg.value) > 0"
+          class="status-chip__badge"
+          [ngClass]="selectedStatusSegment === seg.value
+            ? 'badge-on-chip'
+            : $any(seg).badgeClass">
+          {{ getSegmentCount(seg.value) }}
+        </span>
+      </button>
+    </div>
+  </div>
 </ion-header>
 
 <ion-content [fullscreen]="true" class="bg-[#f7f8fa]">

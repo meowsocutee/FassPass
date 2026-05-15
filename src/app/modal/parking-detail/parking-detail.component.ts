@@ -1367,13 +1367,19 @@ export class ParkingDetailComponent implements OnInit, OnDestroy {
         this.parkingDataService.addBooking(newBooking);
 
         try {
-          await this.reservationService.createReservationv2(
-            newBooking,
-            this.reservationService.getCurrentProfileId(),
-            bookingData.siteId,
-            bookingData.selectedFloors[0],
-            bookingData.selectedSlotId
-          );
+          if (!bookingData.alreadyCreatedInDB) {
+            await this.reservationService.createReservationv2(
+              newBooking,
+              this.reservationService.getCurrentProfileId(),
+              bookingData.siteId,
+              bookingData.selectedFloors[0],
+              bookingData.selectedSlotId
+            );
+          } else {
+            console.log('Reservation already created in CheckBooking modal:', bookingData.dbReservationId);
+            // We could update the status here if needed, but since the webhook handles payment status, 
+            // we can just proceed to success modal.
+          }
 
           
           await loading.dismiss();

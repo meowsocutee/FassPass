@@ -1,4 +1,4 @@
-import { Component, Input, OnInit } from '@angular/core';
+import { Component, Input, OnInit, OnDestroy, NgZone } from '@angular/core';
 import { ModalController, ToastController } from '@ionic/angular';
 import { ReservationService } from '../../services/reservation.service';
 import { ParkingService } from '../../services/parking.service';
@@ -12,7 +12,7 @@ import { Vehicle } from '../../data/models';
   styleUrls: ['./check-booking.component.scss'],
   standalone: false,
 })
-export class CheckBookingComponent implements OnInit {
+export class CheckBookingComponent implements OnInit, OnDestroy {
   @Input() data: any;
 
   durationText: string = '';
@@ -40,6 +40,7 @@ export class CheckBookingComponent implements OnInit {
     { id: 'promptpay', name: 'PromptPay', icon: 'qr-code-outline', color: 'text-blue-600', bg: 'bg-blue-50' },
     { id: 'creditcard', name: 'Credit Card', icon: 'card-outline', color: 'text-purple-600', bg: 'bg-purple-50' },
     { id: 'wallet', name: 'TrueMoney', icon: 'wallet-outline', color: 'text-orange-600', bg: 'bg-orange-50' },
+    { id: 'gateway', name: 'ชำระเงินออนไลน์ (GATEWAY)', icon: 'globe-outline', color: 'text-emerald-600', bg: 'bg-emerald-50' },
     { id: 'pay_later', name: 'จ่ายทีหลัง (Pay Later)', icon: 'time-outline', color: 'text-gray-600', bg: 'bg-gray-100' }
   ];
   selectedPaymentMethod: string = 'promptpay';
@@ -47,6 +48,10 @@ export class CheckBookingComponent implements OnInit {
   
   currentStep: number = 1;
   promptPayRef: string = '';
+  promptPayUrl: string | null = null;
+  isLoadingPayment: boolean = false;
+  createdReservationId: string | null = null;
+  paymentSubscription: any;
 
   
   cardNumber: string = '';
@@ -68,7 +73,8 @@ export class CheckBookingComponent implements OnInit {
     private reservationService: ReservationService,
     private parkingService: ParkingService,
     private parkingDataService: ParkingDataService,
-    private supabaseService: SupabaseService
+    private supabaseService: SupabaseService,
+    private ngZone: NgZone
   ) { }
 
   ngOnInit() {
@@ -120,6 +126,12 @@ export class CheckBookingComponent implements OnInit {
     
     setTimeout(() => this.checkCurrentCarAvailability(), 500);
     this.fetchUserRole();
+  }
+
+  ngOnDestroy() {
+    if (this.paymentSubscription) {
+      this.supabaseService.client.removeChannel(this.paymentSubscription);
+    }
   }
 
   async fetchUserRole() {
@@ -379,18 +391,51 @@ export class CheckBookingComponent implements OnInit {
     }
   }
 
-  confirm() {
+  async confirm() {
     if (this.isCarOccupied) {
       this.presentToast('รถคันนี้มีการจองในช่วงเวลานี้แล้ว กรุณาเปลี่ยนรถหรือเวลา');
       return;
     }
 
     if (this.currentStep === 1) {
-      
-      if (this.selectedPaymentMethod === 'pay_later') {
-        
-        
-        this.currentStep = 2;
+      if (this.selectedPaymentMethod === 'gateway' || this.selectedPaymentMethod === 'promptpay') {
+        try {
+          // Create reservation in DB first to get a real UUID
+          const dbReservation = await this.createReservationInDB();
+          console.log('Created Reservation response:', dbReservation);
+          
+          let extractedId: string | null = null;
+          
+          if (typeof dbReservation === 'string') {
+            extractedId = dbReservation;
+          } else if (dbReservation && typeof dbReservation === 'object') {
+             // Look for common ID fields
+             extractedId = dbReservation.id || dbReservation.reservation_id || dbReservation.new_id || dbReservation.uuid || dbReservation[0]?.id || dbReservation[0]?.reservation_id;
+             
+             // If still not found, try to find any UUID in the object values
+             if (!extractedId) {
+               const values = Object.values(dbReservation);
+               for (const val of values) {
+                 if (typeof val === 'string' && val.length === 36 && val.includes('-')) {
+                   extractedId = val;
+                   break;
+                 }
+               }
+             }
+          }
+          
+          this.createdReservationId = extractedId;
+          
+          if (!this.createdReservationId) {
+            throw new Error('ไม่พบ ID: ' + JSON.stringify(dbReservation));
+          }
+
+          this.currentStep = 2;
+          await this.fetchPaymentGateway(this.createdReservationId);
+        } catch (e: any) {
+          console.error(e);
+          this.presentToast('ไม่สามารถจองได้: ' + (e.message || 'กรุณาลองใหม่'));
+        }
       } else {
         this.currentStep = 2;
       }
@@ -410,9 +455,123 @@ export class CheckBookingComponent implements OnInit {
       status: isPayLater ? 'pending_payment' : 'pending',
       car_id: isInvite ? null : this.selectedCarId,
       car_plate: isInvite ? 'INVITATION' : (selectedCar ? selectedCar.licensePlate : ''),
-      isInvite: isInvite
+      isInvite: isInvite,
+      alreadyCreatedInDB: !!this.createdReservationId,
+      dbReservationId: this.createdReservationId
     };
     this.modalCtrl.dismiss({ confirmed: true, data: finalData, action: isPayLater ? 'pay_later' : 'pay_now' }, 'confirm');
+  }
+
+  async createReservationInDB() {
+    const isInvite = this.bookingType === 'invite';
+    const selectedCar = isInvite ? null : this.selectedCarInfo;
+    
+    // Create a mock Booking object expected by createReservationv2
+    const mockBooking: any = {
+      bookingTime: new Date(this.data.startSlot.dateTime),
+      endTime: new Date(this.data.endSlot.dateTime),
+      status: 'pending_payment',
+      carId: isInvite ? null : this.selectedCarId,
+      licensePlate: isInvite ? 'INVITATION' : (selectedCar ? selectedCar.licensePlate : ''),
+      bookingType: this.data.bookingMode || 'daily'
+    };
+
+    const profileId = this.reservationService.getCurrentProfileId();
+    const siteId = this.data.siteId || '1';
+    
+    return await this.reservationService.createReservationv2(
+      mockBooking,
+      profileId,
+      siteId,
+      this.assignedFloor,
+      this.data.selectedSlotId
+    );
+  }
+
+  async fetchPaymentGateway(reservationId: string) {
+    this.isLoadingPayment = true;
+    try {
+      const amountToCharge = this.totalPrice > 20 ? this.totalPrice : 20; // Omise minimum is 20 THB
+
+      const { data, error } = await this.supabaseService.client.functions.invoke('create-promptpay', {
+        body: {
+          reservation_id: reservationId,
+          amount: amountToCharge
+        }
+      });
+
+      if (error) throw error;
+      
+      if (data?.source?.scannable_code?.image?.download_uri) {
+         this.promptPayUrl = data.source.scannable_code.image.download_uri;
+         
+         // Start listening for payment success via Webhook
+         this.subscribeToPaymentStatus();
+      } else {
+         throw new Error('No QR Code found in response');
+      }
+    } catch (e) {
+      console.error('Payment API Error:', e);
+      this.presentToast('ไม่สามารถสร้าง QR Code ได้ (กรุณาเช็ค OMISE_SECRET_KEY)');
+    } finally {
+      this.isLoadingPayment = false;
+    }
+  }
+
+  subscribeToPaymentStatus() {
+    if (!this.createdReservationId) return;
+
+    // Listen to changes on the reservations table for this specific ID
+    this.paymentSubscription = this.supabaseService.client
+      .channel(`payment_status_${this.createdReservationId}`)
+      .on(
+        'postgres_changes',
+        {
+          event: 'UPDATE',
+          schema: 'public',
+          table: 'reservations',
+          filter: `id=eq.${this.createdReservationId}`
+        },
+        (payload: any) => {
+          console.log('Realtime reservation update:', payload);
+          // When the Omise webhook updates the status to 'paid' (or whatever you use)
+          if (payload.new.status === 'paid' || payload.new.status === 'success' || payload.new.status === 'confirmed') {
+            this.ngZone.run(() => {
+              this.handlePaymentSuccess();
+            });
+          }
+        }
+      )
+      .subscribe();
+  }
+
+  handlePaymentSuccess() {
+    if (this.paymentSubscription) {
+      this.supabaseService.client.removeChannel(this.paymentSubscription);
+    }
+    
+    this.presentToast('ชำระเงินสำเร็จ! กำลังยืนยันการจอง...');
+    
+    // Automatically dismiss and proceed as if they clicked Confirm
+    const isInvite = this.bookingType === 'invite';
+    const selectedCar = isInvite ? null : this.selectedCarInfo;
+    
+    const finalData = {
+      ...this.data,
+      selectedFloors: [this.assignedFloor],
+      selectedZones: [this.assignedZone],
+      totalPrice: this.totalPrice,
+      paymentMethod: this.selectedPaymentMethod,
+      status: 'confirmed',
+      car_id: isInvite ? null : this.selectedCarId,
+      car_plate: isInvite ? 'INVITATION' : (selectedCar ? selectedCar.licensePlate : ''),
+      isInvite: isInvite,
+      alreadyCreatedInDB: true,
+      dbReservationId: this.createdReservationId
+    };
+    
+    // Dismiss the modal with success state, returning to parking-detail
+    this.modalCtrl.dismiss({ confirmed: true, data: finalData, action: 'pay_now' }, 'confirm');
   }
 
   get selectedCarInfo(): Vehicle | undefined {

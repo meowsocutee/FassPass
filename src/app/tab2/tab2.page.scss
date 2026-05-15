@@ -1,5 +1,137 @@
 
-
 .status-toolbar {
-	--background: #ffffff;
+  --background: #ffffff;
+}
+
+// ─── Hide scrollbar ────────────────────────────────────────────────────────
+.no-scrollbar {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+  &::-webkit-scrollbar { display: none; }
+}
+
+// ─── Filter Row ────────────────────────────────────────────────────────────
+.filter-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 16px;
+  background: #fff;
+  border-bottom: 1px solid #f0f0f0;
+}
+
+// ─── Filter Chip ───────────────────────────────────────────────────────────
+.filter-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  height: 36px;
+  padding: 0 12px;
+  border-radius: 20px;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  white-space: nowrap;
+  background: #f4f4f6;
+  color: #555;
+  border: 1.5px solid transparent;
+  transition: background 0.18s, color 0.18s, box-shadow 0.18s, transform 0.12s;
+  user-select: none;
+
+  &:active { transform: scale(0.95); }
+
+  &__icon {
+    font-size: 15px;
+    flex-shrink: 0;
+  }
+
+  &__label {
+    max-width: 92px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+
+  &__arrow {
+    font-size: 11px;
+    opacity: 0.6;
+    flex-shrink: 0;
+  }
+
+  // Active state (filter applied)
+  &--active {
+    background: linear-gradient(135deg, #3b82f6, #6366f1);
+    color: #fff;
+    border-color: transparent;
+    box-shadow: 0 4px 12px rgba(99, 102, 241, 0.28);
+
+    .filter-chip__arrow { opacity: 0.85; }
+  }
+
+  // Reset chip
+  &--reset {
+    background: #fff0f0;
+    color: #e53e3e;
+    border-color: #fecaca;
+
+    &:active { background: #fee2e2; }
+  }
+}
+
+// ─── Status Chip Row ───────────────────────────────────────────────────────
+.status-chip-row {
+  background: #fff;
+  border-bottom: 1px solid #f0f0f0;
+  padding: 0 0 2px 0;
+}
+
+.status-chip-scroll {
+  display: flex;
+  gap: 8px;
+  padding: 8px 16px 10px;
+  overflow-x: auto;
+}
+
+// ─── Status Chip ───────────────────────────────────────────────────────────
+// NOTE: background / color / border-color are intentionally NOT set here.
+// They are controlled entirely by Tailwind classes via [ngClass] in the template,
+// so Tailwind's specificity wins without any conflict.
+.status-chip {
+  display: inline-flex;
+  align-items: center;
+  flex-shrink: 0;
+  gap: 5px;
+  height: 36px;
+  padding: 0 14px;
+  border-radius: 20px;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  border-width: 1.5px;
+  border-style: solid;
+  transition: opacity 0.15s, transform 0.12s, box-shadow 0.18s;
+  outline: none;
+  user-select: none;
+
+  &:active { transform: scale(0.94); }
+
+  &__icon { font-size: 15px; flex-shrink: 0; }
+  &__label { letter-spacing: -0.01em; }
+
+  &__badge {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-width: 20px;
+    height: 18px;
+    padding: 0 5px;
+    border-radius: 9px;
+    font-size: 11px;
+    font-weight: 700;
+  }
+}
+
+// Badge displayed on top of a colored active chip
+.badge-on-chip {
+  background: rgba(255, 255, 255, 0.25);
+  color: #fff;
 }

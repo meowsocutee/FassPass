@@ -17,11 +17,11 @@ import { debounceTime, distinctUntilChanged } from 'rxjs/operators';
 })
 export class Tab2Page implements OnInit, OnDestroy {
 
-  
+
   selectedMonth: string = 'all';
   selectedCategory: string = 'all';
 
-  
+
   searchQuery: string = '';
   showSearch: boolean = false;
   isSearching: boolean = false;
@@ -29,7 +29,7 @@ export class Tab2Page implements OnInit, OnDestroy {
   private searchSubject = new Subject<string>();
   private searchSub!: Subscription;
 
-  
+
   monthOptions: { value: string, label: string }[] = [
     { value: 'all', label: 'ทั้งหมด' }
   ];
@@ -41,23 +41,69 @@ export class Tab2Page implements OnInit, OnDestroy {
     { value: 'monthly_regular', label: 'รายเดือน' },
   ];
 
-  
-  selectedStatusSegment: string = 'in_progress'; 
 
-  
+  selectedStatusSegment: string = 'all';
+
+  // Status chip definitions — matches BUTTONS PER STATUS exactly
+  statusSegments = [
+    {
+      value: 'all',
+      label: 'ทั้งหมด',
+      icon: 'apps-outline',
+      activeClass: 'bg-gray-700 text-white border-gray-700 shadow-md',
+      badgeClass: 'bg-gray-200 text-gray-600'
+    },
+    {
+      value: 'pending_payment',
+      label: 'รอชำระ',
+      icon: 'card-outline',
+      activeClass: 'bg-orange-500 text-white border-orange-500 shadow-md shadow-orange-200',
+      badgeClass: 'bg-orange-100 text-orange-600'
+    },
+    {
+      value: 'confirmed',
+      label: 'จ่ายแล้ว รอเข้าจอด',
+      icon: 'checkmark-circle-outline',
+      activeClass: 'bg-blue-500 text-white border-blue-500 shadow-md shadow-blue-200',
+      badgeClass: 'bg-blue-100 text-blue-600'
+    },
+    {
+      value: 'parked',
+      label: 'กำลังจอด',
+      icon: 'car-outline',
+      activeClass: 'bg-green-500 text-white border-green-500 shadow-md shadow-green-200',
+      badgeClass: 'bg-green-100 text-green-600'
+    },
+    {
+      value: 'done',
+      label: 'เสร็จสิ้น',
+      icon: 'checkmark-done-outline',
+      activeClass: 'bg-gray-500 text-white border-gray-500 shadow-md',
+      badgeClass: 'bg-gray-100 text-gray-600'
+    },
+    {
+      value: 'cancelled',
+      label: 'ยกเลิก',
+      icon: 'close-circle-outline',
+      activeClass: 'bg-red-500 text-white border-red-500 shadow-md shadow-red-200',
+      badgeClass: 'bg-red-100 text-red-600'
+    },
+  ];
+
+
   displayBookings: Booking[] = [];
 
-  
+
   isExpanded: boolean = false;
 
   allBookings: Booking[] = [];
   private reservationBookings: Booking[] = [];
   private accessPassBookings: Booking[] = [];
 
-  
+
   reservationsSubscription: any;
 
-  
+
   isLoading: boolean = false;
 
   constructor(
@@ -67,7 +113,7 @@ export class Tab2Page implements OnInit, OnDestroy {
     private toastCtrl: ToastController,
     private supabaseService: SupabaseService,
   ) { }
-  
+
   ngOnInit() {
     this.parkingService.bookings$.subscribe(bookings => {
       this.reservationBookings = bookings || [];
@@ -143,8 +189,9 @@ export class Tab2Page implements OnInit, OnDestroy {
 
           switch (r.status) {
             case 'pending':
+              // รายเดือน หรือ pre-checkin ที่ผ่าน approval
               status = 'pending';
-              statusLabel = 'กำลังตรวจสอบรายการ';
+              statusLabel = 'รอเข้าจอด (อนุมัติแล้ว)';
               break;
             case 'pending_payment':
               status = 'pending_payment';
@@ -159,8 +206,9 @@ export class Tab2Page implements OnInit, OnDestroy {
               statusLabel = 'กำลังจอด (รอชำระเงิน)';
               break;
             case 'confirmed':
+              // ชำระเงินแล้ว รอเข้าจอด (new flow)
               status = 'confirmed';
-              statusLabel = 'เสร็จสิ้น';
+              statusLabel = 'ชำระแล้ว — รอเข้าจอด';
               break;
             case 'checked_in':
             case 'active':
@@ -168,10 +216,10 @@ export class Tab2Page implements OnInit, OnDestroy {
               statusLabel = 'กำลังจอด';
               break;
             case 'checked_out':
-            case 'completed':
-              status = 'completed';
+              status = 'checked_out';
               statusLabel = 'เสร็จสิ้น';
               break;
+
             case 'cancelled':
               status = 'cancelled';
               statusLabel = 'ยกเลิกแล้ว';
@@ -260,9 +308,26 @@ export class Tab2Page implements OnInit, OnDestroy {
           } as Booking;
         });
 
+        // ── Fetch price for unpaid reservations that have no price yet ──────────
+        const needsFee = mappedBookings.filter(b =>
+          ['pending_payment', 'checked_in_pending_payment'].includes(b.status) &&
+          (!b.price || b.price === 0)
+        );
+        if (needsFee.length > 0) {
+          await Promise.allSettled(
+            needsFee.map(async (b) => {
+              try {
+                const fee = await this.reservationService.getParkingFee(b.id);
+                if (fee > 0) b.price = fee;
+              } catch { /* ignore */ }
+            })
+          );
+        }
+
         this.reservationBookings = mappedBookings;
         this.mergeAllBookings();
       }
+
     } catch (error) {
       console.error('Error loading real reservations:', error);
     } finally {
@@ -284,6 +349,33 @@ export class Tab2Page implements OnInit, OnDestroy {
   segmentChanged(event: any) {
     this.selectedStatusSegment = event.detail.value;
     this.updateFilter();
+  }
+
+  selectStatusSegment(value: string) {
+    this.selectedStatusSegment = value;
+    this.updateFilter();
+  }
+
+  resetFilters() {
+    this.selectedMonth = 'all';
+    this.selectedCategory = 'all';
+    this.updateFilter();
+  }
+
+  getSegmentCount(segValue: string): number {
+    const statusMap: Record<string, string[]> = {
+      all: [],   // empty array handled specially below
+      pending_payment: ['pending_payment', 'checked_in_pending_payment'],
+      confirmed: ['confirmed'],               // paid, not yet checked-in
+      parked: ['active', 'checked_in'],    // parked & paid
+      done: ['checked_out'],
+      cancelled: ['cancelled'],
+    };
+    const statuses = statusMap[segValue];
+    if (!statuses) return 0;
+    // 'all' counts everything EXCEPT checked_out (those only show in done)
+    if (statuses.length === 0) return this.allBookings.filter(b => b.status !== 'checked_out').length;
+    return this.allBookings.filter(b => statuses.includes(b.status)).length;
   }
 
   toggleSearch() {
@@ -341,24 +433,45 @@ export class Tab2Page implements OnInit, OnDestroy {
 
   updateFilter() {
     let filtered = this.allBookings.filter(b => {
+      // ── Status filter ──────────────────────────────────────────────────────
       let statusMatch = false;
-      if (this.selectedStatusSegment === 'in_progress') {
-        statusMatch = ['active', 'pending_payment', 'pending', 'pending_invite', 'checked_in_pending_payment'].includes(b.status);
-      } else if (this.selectedStatusSegment === 'cancelled') {
-        statusMatch = b.status === 'cancelled';
-      } else {
-        statusMatch = b.status === 'completed' || b.status === 'confirmed';
+      switch (this.selectedStatusSegment) {
+        case 'all':
+          // แสดงทั้งหมด ยกเว้น checked_out (เสร็จสิ้น ไปดูที่ tab เสร็จสิ้น)
+          statusMatch = b.status !== 'checked_out';
+          break;
+        case 'pending_payment':
+          // รอชำระ — ไม่ว่าจะเข้าจอดแล้วหรือยัง
+          statusMatch = ['pending_payment', 'checked_in_pending_payment'].includes(b.status);
+          break;
+        case 'confirmed':
+          // ชำระเงินแล้ว รอเข้าจอด
+          statusMatch = b.status === 'confirmed';
+          break;
+        case 'parked':
+          // กำลังจอด (จ่ายแล้ว)
+          statusMatch = ['active', 'checked_in'].includes(b.status);
+          break;
+        case 'done':
+          // เสร็จสิ้น — check-out แล้ว
+          statusMatch = b.status === 'checked_out';
+          break;
+        case 'cancelled':
+          statusMatch = b.status === 'cancelled';
+          break;
+        default:
+          statusMatch = b.status === this.selectedStatusSegment;
       }
 
+      // ── Month filter ───────────────────────────────────────────────────────
       let monthMatch = true;
       if (this.selectedMonth !== 'all') {
         const d = new Date(b.bookingTime);
-        const yyyy = d.getFullYear();
-        const mm = String(d.getMonth() + 1).padStart(2, '0');
-        const key = `${yyyy}-${mm}`;
+        const key = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`;
         monthMatch = key === this.selectedMonth;
       }
 
+      // ── Booking type filter ────────────────────────────────────────────────
       let catMatch = true;
       if (this.selectedCategory !== 'all') {
         if (b.itemKind === 'access_pass') {
@@ -368,6 +481,7 @@ export class Tab2Page implements OnInit, OnDestroy {
         }
       }
 
+      // ── Search filter ──────────────────────────────────────────────────────
       let searchMatch = true;
       if (this.searchQuery.trim() !== '') {
         const q = this.searchQuery.toLowerCase().trim();
@@ -384,7 +498,8 @@ export class Tab2Page implements OnInit, OnDestroy {
       return statusMatch && monthMatch && catMatch && searchMatch;
     });
 
-    filtered.sort((a, b) => new Date(a.bookingTime).getTime() - new Date(b.bookingTime).getTime());
+    // Sort: newest first
+    filtered.sort((a, b) => new Date(b.bookingTime).getTime() - new Date(a.bookingTime).getTime());
     this.displayBookings = filtered;
   }
 
@@ -533,9 +648,9 @@ export class Tab2Page implements OnInit, OnDestroy {
       const mapped = Array.from(groups.values()).map((g) => {
         const lot = this.parkingService.getParkingLotById(g.buildingId);
 
-        
-        
-        
+
+
+
         let computedExpiresAt: Date | null = null;
         if (g.doorIds?.length) {
           let hasUnlimited = false;

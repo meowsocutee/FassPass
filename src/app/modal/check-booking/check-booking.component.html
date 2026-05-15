@@ -200,12 +200,16 @@
       <div class="mt-4">
 
         
-        <div *ngIf="selectedPaymentMethod === 'promptpay'"
+        <div *ngIf="selectedPaymentMethod === 'promptpay' || selectedPaymentMethod === 'gateway'"
           class="bg-white rounded-3xl p-6 border border-gray-100 shadow-sm text-center">
-          <div class="mb-4">
-            <img
+          <div class="mb-4 relative min-h-[192px] flex items-center justify-center">
+            <ion-spinner *ngIf="isLoadingPayment" color="primary"></ion-spinner>
+            <img *ngIf="!isLoadingPayment && promptPayUrl"
+              [src]="promptPayUrl"
+              class="w-48 h-48 object-contain mx-auto" alt="Payment QR">
+            <img *ngIf="!isLoadingPayment && !promptPayUrl"
               src="https://upload.wikimedia.org/wikipedia/commons/thumb/d/d0/QR_code_for_mobile_English_Wikipedia.svg/1200px-QR_code_for_mobile_English_Wikipedia.svg.png"
-              class="w-48 h-48 object-contain mx-auto" alt="PromptPay QR">
+              class="w-48 h-48 object-contain mx-auto opacity-50 grayscale" alt="Placeholder QR">
           </div>
           <p class="text-sm text-gray-500 mb-1">Ref No.</p>
           <p class="text-xl font-bold text-gray-800 tracking-wider font-mono bg-gray-50 py-2 rounded-lg mb-2">{{
@@ -257,6 +261,8 @@
           <p class="text-xs text-gray-400">ระบบจะส่งแจ้งเตือนการชำระเงินไปยังแอปพลิเคชันของท่าน</p>
         </div>
 
+        <!-- Note: Gateway section is merged with PromptPay above since they both display the QR code for now -->
+
         
         <div *ngIf="selectedPaymentMethod === 'pay_later'"
           class="bg-white rounded-3xl p-6 border border-gray-100 shadow-sm text-center">
@@ -305,10 +311,19 @@
 
     
     <div *ngIf="currentStep === 2" class="animate-fade-in">
-      <ion-button expand="block" shape="round" color="primary"
-        class="rounded-full font-bold h-12 text-base shadow-lg shadow-blue-200" (click)="confirm()" [disabled]="bookingType === 'self' && isCarOccupied">
-        {{ selectedPaymentMethod === 'pay_later' ? 'ตกลง' : 'ยืนยันการชำระเงิน' }}
-      </ion-button>
+      <div *ngIf="selectedPaymentMethod === 'pay_later'">
+        <ion-button expand="block" shape="round" color="primary"
+          class="rounded-full font-bold h-12 text-base shadow-lg shadow-blue-200" (click)="confirm()" [disabled]="bookingType === 'self' && isCarOccupied">
+          ตกลง
+        </ion-button>
+      </div>
+      <div *ngIf="selectedPaymentMethod !== 'pay_later'"
+        class="text-center py-3 px-4 bg-blue-50 rounded-2xl border border-blue-100">
+        <ion-icon name="information-circle-outline" class="text-blue-400 text-xl mb-1"></ion-icon>
+        <p class="text-sm text-blue-600 font-medium leading-relaxed">
+          กรุณาชำระเงิน การชำระเงินของคุณจะไปอยู่หน้าการจอง
+        </p>
+      </div>
     </div>
 
   </div>
