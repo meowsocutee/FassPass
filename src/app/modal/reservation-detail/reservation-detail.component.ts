@@ -89,9 +89,12 @@ export class ReservationDetailComponent implements OnInit, OnDestroy {
         if (liveStatuses.includes(this.internalStatus)) {
             try {
                 const fee = await this.reservationService.getParkingFee(this.booking.id);
-                if (fee > 0) this.booking.price = fee;
+                this.ngZone.run(() => {
+                    if (fee >= 0) this.booking.price = fee;
+                });
             } catch (e) { console.error('fee error', e); }
             return;
+
         }
         // For pending_payment: try to read pre-computed amount from payments table
         if (this.internalStatus === 'pending_payment' && (!this.booking.price || this.booking.price === 0)) {
