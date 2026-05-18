@@ -95,7 +95,8 @@ export class ReservationService {
             vehicleType: 'car',
             carId: booking.carId,
             carPlate: booking.licensePlate,
-            bookingType: this.mapBookingTypeToEnum(booking.bookingType)
+            bookingType: this.mapBookingTypeToEnum(booking.bookingType),
+            inviteCode: booking.inviteCode
           }
         }
       }

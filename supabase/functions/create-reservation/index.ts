@@ -1,4 +1,3 @@
-import "@supabase/functions-js/edge-runtime.d.ts"
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts"
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2'
 
@@ -98,7 +97,7 @@ serve(async (req) => {
         //--------------------------------------------------
 
         const { data, error } = await supabaseClient.rpc(
-            'create_reservation_with_log',
+            'create_reservation_with_log2',
             {
                 p_user_id: userId,
                 p_user_name: profile.name ?? user.email,
@@ -117,7 +116,8 @@ serve(async (req) => {
                 p_car_id: reservation.carId ?? null,
                 p_car_plate: plate,
 
-                p_booking_type: reservation.bookingType
+                p_booking_type: reservation.bookingType,
+                p_invite_code: reservation.inviteCode ?? null
             }
         )
 
