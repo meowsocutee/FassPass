@@ -122,6 +122,7 @@ export class ParkingDetailComponent implements OnInit, OnDestroy {
   crossDayCount: number = 1;
   minDate: string = new Date().toISOString(); 
   isBooking: boolean = false; 
+  currentUserRole: string = 'Guest';
   private realtimeChannel: RealtimeChannel | null = null;
 
   constructor(
@@ -143,6 +144,12 @@ export class ParkingDetailComponent implements OnInit, OnDestroy {
     this.parkingDataService.parkingLots$.subscribe(sites => {
       if (this.availableSites.length === 0) {
         this.availableSites = sites;
+      }
+    });
+
+    this.parkingDataService.userProfile$.subscribe(profile => {
+      if (profile) {
+        this.currentUserRole = profile.role || 'Guest';
       }
     });
 
@@ -1246,6 +1253,11 @@ export class ParkingDetailComponent implements OnInit, OnDestroy {
     }
 
     if (this.isInviteMode) {
+      const role = this.currentUserRole?.toLowerCase();
+      if (role === 'visitor' || role === 'guest') {
+        this.presentToast('เฉพาะเจ้าของห้อง/ผู้ที่มีสิทธิ์เท่านั้นที่สามารถสร้างคำเชิญได้');
+        return;
+      }
       this.processBooking();
       return;
     }
@@ -1266,6 +1278,13 @@ export class ParkingDetailComponent implements OnInit, OnDestroy {
             await this.parkingDataService.addVehicle(data);
             const userId = this.reservationService.getCurrentProfileId();
             await this.parkingDataService.loadUserVehicles(userId);
+            
+            const userRole = this.currentUserRole?.toLowerCase();
+            if (userRole === 'visitor' || userRole === 'guest') {
+              this.presentToast('คุณเพิ่มรถสำเร็จ แต่เฉพาะผู้ที่มีสิทธิ์เท่านั้นจึงจะสามารถจองได้ (คุณต้องได้รับคำเชิญ)');
+              return;
+            }
+
             this.processBooking();
           } catch (e: any) {
             console.error('Error adding vehicle', e);
@@ -1276,6 +1295,11 @@ export class ParkingDetailComponent implements OnInit, OnDestroy {
           }
         }
       } else {
+        const userRole = this.currentUserRole?.toLowerCase();
+        if (userRole === 'visitor' || userRole === 'guest') {
+          this.presentToast('เฉพาะผู้ที่มีสิทธิ์หรือได้รับคำเชิญเท่านั้นจึงจะสามารถจองได้');
+          return;
+        }
         
         this.processBooking();
       }
