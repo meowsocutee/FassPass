@@ -80,6 +80,9 @@ serve(async (req) => {
 
         let lineId = null;
 
+        // Map 'Guest' role to null for database update, as 'Guest' is not in the user_role enum
+        const updateRole = role === 'Guest' ? null : role;
+
         if (action === 'unlink_only') {
             // Just fetch line_id without updating the role
             const { data: profileData, error: profileError } = await supabase
@@ -93,7 +96,7 @@ serve(async (req) => {
             // Update profile role and fetch line_id
             const { data: profileData, error: profileError } = await supabase
                 .from('profiles')
-                .update({ role: role, role_level: role_level })
+                .update({ role: updateRole, role_level: role_level })
                 .eq('id', user_id)
                 .select('line_id')
                 .single()

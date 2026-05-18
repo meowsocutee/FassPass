@@ -84,6 +84,7 @@ export class ParkingDetailComponent implements OnInit, OnDestroy {
   @Input() lot!: ParkingLot;
   @Input() initialType: string = 'normal';
   @Input() bookingMode: 'daily' | 'monthly' | 'flat24' = 'daily';
+  @Input() isInviteMode: boolean = false;
 
   availableSites: ParkingLot[] = [];
   weeklySchedule: DailySchedule[] = [];
@@ -1244,7 +1245,11 @@ export class ParkingDetailComponent implements OnInit, OnDestroy {
       return;
     }
 
-    
+    if (this.isInviteMode) {
+      this.processBooking();
+      return;
+    }
+
     this.parkingDataService.vehicles$.pipe(take(1)).subscribe(async (vehicles) => {
       if (!vehicles || vehicles.length === 0) {
         
@@ -1312,7 +1317,8 @@ export class ParkingDetailComponent implements OnInit, OnDestroy {
       isRandomSystem: false,
       bookingMode: this.bookingMode,
       lotPrice: this.lot?.price !== undefined ? this.lot.price : 20,
-      price: this.calculatePrice(finalStart, finalEnd)
+      price: this.calculatePrice(finalStart, finalEnd),
+      isInvite: this.isInviteMode
     };
 
     try {

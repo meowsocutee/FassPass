@@ -78,6 +78,10 @@ export class CheckBookingComponent implements OnInit, OnDestroy {
   ) { }
 
   ngOnInit() {
+    if (this.data && this.data.isInvite) {
+      this.bookingType = 'invite';
+    }
+
     if (this.data && this.data.lotPrice !== undefined) {
       this.hourlyRate = this.data.lotPrice;
     }
@@ -398,7 +402,9 @@ export class CheckBookingComponent implements OnInit, OnDestroy {
     }
 
     if (this.currentStep === 1) {
-      if (this.selectedPaymentMethod === 'gateway' || this.selectedPaymentMethod === 'promptpay') {
+      if (this.bookingType === 'invite') {
+        // Skip step 2 (payment/confirmation) for invites
+      } else if (this.selectedPaymentMethod === 'gateway' || this.selectedPaymentMethod === 'promptpay') {
         try {
           // Create reservation in DB first to get a real UUID
           const dbReservation = await this.createReservationInDB();
@@ -436,10 +442,11 @@ export class CheckBookingComponent implements OnInit, OnDestroy {
           console.error(e);
           this.presentToast('ไม่สามารถจองได้: ' + (e.message || 'กรุณาลองใหม่'));
         }
+        return;
       } else {
         this.currentStep = 2;
+        return;
       }
-      return;
     }
 
     

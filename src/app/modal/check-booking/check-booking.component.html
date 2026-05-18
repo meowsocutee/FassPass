@@ -143,7 +143,7 @@
       </div>
 
       
-      <div>
+      <div *ngIf="bookingType !== 'invite'">
         <h3 class="text-sm font-bold text-gray-800 mb-3 px-1">เลือกช่องทางชำระเงิน</h3>
         <div class="space-y-2">
           <label *ngFor="let method of paymentMethods"
@@ -305,7 +305,7 @@
       <ion-button expand="block" shape="round" color="primary"
         class="rounded-full font-bold h-12 text-base shadow-lg shadow-blue-200" (click)="confirm()"
         [disabled]="!data.selectedSlotId || data.selectedFloors.length === 0 || data.selectedZones.length === 0 || (bookingType === 'self' && isCarOccupied)">
-        {{ selectedPaymentMethod === 'pay_later' ? (bookingType === 'invite' ? 'สร้างคำเชิญ' : 'ยืนยันการจอง') : 'ชำระเงิน (ต่อไป)' }}
+        {{ bookingType === 'invite' ? 'สร้างคำเชิญ' : (selectedPaymentMethod === 'pay_later' ? 'ยืนยันการจอง' : 'ชำระเงิน (ต่อไป)') }}
       </ion-button>
     </div>
 

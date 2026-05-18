@@ -61,6 +61,13 @@ export class Tab2Page implements OnInit, OnDestroy {
       badgeClass: 'bg-orange-100 text-orange-600'
     },
     {
+      value: 'pending_invite',
+      label: 'คำเชิญ',
+      icon: 'mail-open-outline',
+      activeClass: 'bg-purple-500 text-white border-purple-500 shadow-md shadow-purple-200',
+      badgeClass: 'bg-purple-100 text-purple-600'
+    },
+    {
       value: 'confirmed',
       label: 'จ่ายแล้ว รอเข้าจอด',
       icon: 'checkmark-circle-outline',
@@ -366,6 +373,7 @@ export class Tab2Page implements OnInit, OnDestroy {
     const statusMap: Record<string, string[]> = {
       all: [],   // empty array handled specially below
       pending_payment: ['pending_payment', 'checked_in_pending_payment'],
+      pending_invite: ['pending_invite'],
       confirmed: ['confirmed'],               // paid, not yet checked-in
       parked: ['active', 'checked_in'],    // parked & paid
       done: ['checked_out'],
@@ -443,6 +451,9 @@ export class Tab2Page implements OnInit, OnDestroy {
         case 'pending_payment':
           // รอชำระ — ไม่ว่าจะเข้าจอดแล้วหรือยัง
           statusMatch = ['pending_payment', 'checked_in_pending_payment'].includes(b.status);
+          break;
+        case 'pending_invite':
+          statusMatch = b.status === 'pending_invite';
           break;
         case 'confirmed':
           // ชำระเงินแล้ว รอเข้าจอด

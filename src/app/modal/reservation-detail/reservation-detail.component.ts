@@ -118,6 +118,7 @@ export class ReservationDetailComponent implements OnInit, OnDestroy {
             active:                     'กำลังจอด',
             checked_in:                 'กำลังจอด',
             pending:                    'รอตรวจสอบ',
+            pending_invite:             'รอเข้าใช้งาน (ส่งคำเชิญแล้ว)',
             checked_out:                'เสร็จสิ้น',
             completed:                  'เสร็จสิ้น',
             cancelled:                  'ยกเลิกแล้ว',
@@ -132,6 +133,7 @@ export class ReservationDetailComponent implements OnInit, OnDestroy {
             checked_in_pending_payment: 'bg-orange-600',
             active: 'bg-green-500', checked_in: 'bg-green-500',
             pending: 'bg-amber-500',
+            pending_invite: 'bg-purple-500',
             checked_out: 'bg-gray-400', completed: 'bg-gray-400',
             cancelled: 'bg-red-500',
         };
@@ -145,6 +147,7 @@ export class ReservationDetailComponent implements OnInit, OnDestroy {
             checked_in_pending_payment: 'text-orange-600',
             active: 'text-green-600', checked_in: 'text-green-600',
             pending: 'text-amber-500',
+            pending_invite: 'text-purple-600',
             checked_out: 'text-gray-500', completed: 'text-gray-500',
             cancelled: 'text-red-500',
         };

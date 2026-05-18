@@ -1,11 +1,12 @@
 import { Component, OnInit } from '@angular/core';
-import { AlertController, ModalController, ToastController } from '@ionic/angular';
-import { SettingItem, UserProfile, Vehicle } from '../data/models';
+import { ActionSheetController, AlertController, ModalController, ToastController } from '@ionic/angular';
+import { SettingItem, UserProfile, Vehicle, ParkingLot } from '../data/models';
 import { ParkingDataService } from '../services/parking-data.service';
 import { GENERAL_SETTINGS, OTHER_SETTINGS } from '../data/app-settings';
 import { AddVehicleModalComponent } from '../modal/add-vehicle/add-vehicle-modal.component';
 import { EditProfileModalComponent } from '../modal/edit-profile-modal/edit-profile-modal.component';
 import { InviteVisitorModalComponent } from '../modal/invite-visitor/invite-visitor-modal.component';
+import { ParkingDetailComponent } from '../modal/parking-detail/parking-detail.component';
 import { SwitchMenuModalComponent } from '../components/switch-menu-modal/switch-menu-modal.component';
 import { DocumentModalComponent } from '../modal/document-modal/document-modal.component';
 import { AuthService } from '../services/auth.service';
@@ -24,12 +25,14 @@ export class Tab3Page implements OnInit {
   vehicles: Vehicle[] = [];
   generalSettings = GENERAL_SETTINGS;
   otherSettings = OTHER_SETTINGS;
+  availableLots: ParkingLot[] = [];
 
   constructor(
     private parkingService: ParkingDataService,
     private modalCtrl: ModalController,
-    private toastCtrl: ToastController,
     private alertCtrl: AlertController,
+    private actionSheetCtrl: ActionSheetController,
+    private toastCtrl: ToastController,
     private authService: AuthService,
     private lineService: LineService
   ) { }
@@ -43,6 +46,9 @@ export class Tab3Page implements OnInit {
         if (!a.isDefault && b.isDefault) return 1;
         return 0;
       });
+    });
+    this.parkingService.parkingLots$.subscribe(lots => {
+      this.availableLots = lots.filter(l => l.category === 'parking' || l.category === 'building');
     });
   }
 
@@ -265,17 +271,43 @@ export class Tab3Page implements OnInit {
   }
 
   async openInviteModal() {
-    const modal = await this.modalCtrl.create({
-      component: InviteVisitorModalComponent,
-      breakpoints: [0, 0.75, 1],
-      initialBreakpoint: 1,
-    });
-    await modal.present();
-
-    const { data, role } = await modal.onDidDismiss();
-    if (role === 'confirm' && data) {
-      console.log('Invite created:', data);
+    if (this.availableLots.length === 0) {
+      this.showToast('ไม่พบข้อมูลอาคาร', 'error');
+      return;
     }
+
+    const buttons = this.availableLots.map((lot) => ({
+      text: lot.name,
+      icon: lot.category === 'building' ? 'business-outline' : 'location-outline',
+      handler: async () => {
+        const modal = await this.modalCtrl.create({
+          component: ParkingDetailComponent,
+          componentProps: {
+            lot: lot,
+            isInviteMode: true
+          },
+          breakpoints: [0, 1],
+          initialBreakpoint: 1,
+          cssClass: 'detail-sheet-modal',
+        });
+        await modal.present();
+      }
+    }));
+
+    buttons.push({
+      text: 'ยกเลิก',
+      icon: 'close-outline',
+      handler: () => {}
+    } as any);
+
+    const actionSheet = await this.actionSheetCtrl.create({
+      header: 'เลือกอาคารที่ต้องการเชิญ',
+      subHeader: 'กรุณาระบุอาคารที่จอดรถสำหรับผู้มาติดต่อ',
+      buttons: buttons,
+      cssClass: 'custom-action-sheet'
+    });
+
+    await actionSheet.present();
   }
 
   async openSetting(item: SettingItem) {

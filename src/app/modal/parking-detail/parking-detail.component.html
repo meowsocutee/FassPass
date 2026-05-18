@@ -501,8 +501,7 @@
     <ion-button expand="block" shape="round" color="primary"
       [disabled]="!startSlot || selectedFloorIds.length === 0 || selectedZoneIds.length === 0" (click)="Reservations()"
       class="h-12 text-base font-bold shadow-none">
-
-      ตรวจสอบสิทธิ์การจอง
+      {{ isInviteMode ? 'สร้างคำเชิญผู้มาติดต่อ' : 'ตรวจสอบสิทธิ์การจอง' }}
     </ion-button>
   </div>
 </ion-footer>
