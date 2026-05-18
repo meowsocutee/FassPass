@@ -104,7 +104,7 @@
         </div>
         <h3 class="text-base font-bold text-gray-600">ยังไม่มียานพาหนะ</h3>
         <p class="text-sm text-gray-500 mb-4">เพิ่มรถของคุณเพื่อเริ่มใช้งาน</p>
-        <ion-button (click)="addVehicle()" [disabled]="vehicles.length >= 3" size="small"
+        <ion-button (click)="addVehicle()" [disabled]="vehicles.length >= 3 || userProfile.role === 'Visitor'" size="small"
           class="font-bold [--background:#1a73e8] [--border-radius:8px]">
           <ion-icon name="add-outline" slot="start"></ion-icon>
           เพิ่มยานพาหนะ
@@ -296,10 +296,13 @@
 
     
     <div class="py-4">
-      <div class="mx-4 mb-2 text-center text-xs text-red-500 font-medium" *ngIf="vehicles.length >= 3">
+      <div class="mx-4 mb-2 text-center text-xs text-red-500 font-medium" *ngIf="userProfile.role === 'Visitor'">
+        * ผู้เยี่ยมชมไม่สามารถเพิ่มยานพาหนะได้
+      </div>
+      <div class="mx-4 mb-2 text-center text-xs text-red-500 font-medium" *ngIf="userProfile.role !== 'Visitor' && vehicles.length >= 3">
         * ไม่สามารถเพิ่มยานพาหนะได้ (สูงสุด 3 คัน)
       </div>
-      <ion-button expand="block" [disabled]="vehicles.length >= 3"
+      <ion-button expand="block" [disabled]="vehicles.length >= 3 || userProfile.role === 'Visitor'"
         class="mx-4 font-bold text-base h-12 [--background:#1a73e8] [--border-radius:8px]" (click)="addVehicle()">
         <ion-icon name="add-circle-outline" slot="start"></ion-icon>
         เพิ่มยานพาหนะใหม่

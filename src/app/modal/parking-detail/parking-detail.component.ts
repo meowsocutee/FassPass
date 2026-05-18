@@ -1373,8 +1373,14 @@ export class ParkingDetailComponent implements OnInit, OnDestroy {
 
         let inviteCode = '';
         if (bookingData.isInvite) {
-          inviteCode = 'PRK-' + Math.random().toString(36).substring(2, 8).toUpperCase();
-          bookingData.car_plate = inviteCode;
+          if (bookingData.car_plate && bookingData.car_plate !== 'INVITATION') {
+            
+            inviteCode = '';
+          } else {
+            
+            inviteCode = 'PRK-' + Math.random().toString(36).substring(2, 8).toUpperCase();
+            bookingData.car_plate = inviteCode;
+          }
           bookingData.status = bookingData.status === 'pending_payment' ? 'pending_payment' : 'pending_invite';
         }
 

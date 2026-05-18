@@ -106,13 +106,21 @@
             </div>
           </div>
           
-          <div *ngIf="bookingType === 'invite'" class="bg-blue-50 border border-blue-100 rounded-xl p-3 flex items-center gap-3 mb-3">
-            <div class="w-10 h-10 rounded-full bg-white flex items-center justify-center shrink-0 shadow-sm text-blue-600">
-              <ion-icon name="person-add" class="text-xl"></ion-icon>
+          <div *ngIf="bookingType === 'invite'" class="bg-blue-50 border border-blue-100 rounded-xl p-3 mb-3">
+            <div class="flex items-center gap-3">
+              <div class="w-10 h-10 rounded-full bg-white flex items-center justify-center shrink-0 shadow-sm text-blue-600">
+                <ion-icon name="person-add" class="text-xl"></ion-icon>
+              </div>
+              <div>
+                <div class="text-xs font-bold text-blue-800">สร้างเป็นคำเชิญที่จอดรถ</div>
+                <div class="text-[10px] text-blue-600">รหัสคำเชิญจะถูกสร้างเมื่อทำการยืนยัน</div>
+              </div>
             </div>
-            <div>
-              <div class="text-xs font-bold text-blue-800">สร้างเป็นคำเชิญที่จอดรถ</div>
-              <div class="text-[10px] text-blue-600">รหัสคำเชิญจะถูกสร้างเมื่อทำการยืนยัน</div>
+            
+            <div class="bg-white rounded-lg p-2 border border-blue-100 mt-3 shadow-sm">
+              <label class="text-[10px] text-gray-500 font-bold ml-1 mb-1 block">ป้ายทะเบียนของผู้มาติดต่อ (ถ้าทราบ)</label>
+              <input type="text" [(ngModel)]="visitorLicensePlate" placeholder="เช่น กข 1234 กทม"
+                class="w-full bg-gray-50 border border-transparent rounded-lg px-3 py-2 text-sm font-bold text-gray-800 outline-none focus:bg-white focus:border-blue-500 transition-all uppercase">
             </div>
           </div>
 

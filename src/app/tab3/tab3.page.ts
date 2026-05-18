@@ -88,6 +88,11 @@ export class Tab3Page implements OnInit {
   }
 
   async addVehicle() {
+    if (this.userProfile.role === 'Visitor') {
+      await this.showToast('ผู้เยี่ยมชมไม่สามารถเพิ่มยานพาหนะได้', 'error');
+      return;
+    }
+
     if (this.vehicles.length >= 3) {
       await this.showToast('ไม่สามารถเพิ่มยานพาหนะได้ เนื่องจากถึงขีดจำกัด 3 คันแล้ว', 'error');
       return;

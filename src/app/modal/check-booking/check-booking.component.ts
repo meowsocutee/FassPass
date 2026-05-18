@@ -66,6 +66,7 @@ export class CheckBookingComponent implements OnInit, OnDestroy {
   bookingType: 'self' | 'invite' = 'self';
   generatedInviteCode: string = '';
   userRole: string = 'User'; 
+  visitorLicensePlate: string = '';
 
   constructor(
     private modalCtrl: ModalController,
@@ -461,7 +462,7 @@ export class CheckBookingComponent implements OnInit, OnDestroy {
       paymentMethod: this.selectedPaymentMethod,
       status: isPayLater ? 'pending_payment' : 'pending',
       car_id: isInvite ? null : this.selectedCarId,
-      car_plate: isInvite ? 'INVITATION' : (selectedCar ? selectedCar.licensePlate : ''),
+      car_plate: isInvite ? (this.visitorLicensePlate || 'INVITATION') : (selectedCar ? selectedCar.licensePlate : ''),
       isInvite: isInvite,
       alreadyCreatedInDB: !!this.createdReservationId,
       dbReservationId: this.createdReservationId
@@ -479,7 +480,7 @@ export class CheckBookingComponent implements OnInit, OnDestroy {
       endTime: new Date(this.data.endSlot.dateTime),
       status: 'pending_payment',
       carId: isInvite ? null : this.selectedCarId,
-      licensePlate: isInvite ? 'INVITATION' : (selectedCar ? selectedCar.licensePlate : ''),
+      licensePlate: isInvite ? (this.visitorLicensePlate || 'INVITATION') : (selectedCar ? selectedCar.licensePlate : ''),
       bookingType: this.data.bookingMode || 'daily'
     };
 
@@ -571,7 +572,7 @@ export class CheckBookingComponent implements OnInit, OnDestroy {
       paymentMethod: this.selectedPaymentMethod,
       status: 'confirmed',
       car_id: isInvite ? null : this.selectedCarId,
-      car_plate: isInvite ? 'INVITATION' : (selectedCar ? selectedCar.licensePlate : ''),
+      car_plate: isInvite ? (this.visitorLicensePlate || 'INVITATION') : (selectedCar ? selectedCar.licensePlate : ''),
       isInvite: isInvite,
       alreadyCreatedInDB: true,
       dbReservationId: this.createdReservationId
